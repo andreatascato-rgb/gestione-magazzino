@@ -499,16 +499,9 @@ function Customers() {
   if (loading) {
     return (
       <div className="registro-page">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '400px',
-          flexDirection: 'column',
-          gap: 'var(--spacing-4)'
-        }}>
+        <div className="loading-state">
           <LoadingSpinner size="lg" />
-          <p style={{ color: 'var(--color-text-secondary)' }}>Caricamento clienti...</p>
+          <p>Caricamento clienti...</p>
         </div>
       </div>
     );
@@ -529,7 +522,7 @@ function Customers() {
             <span className="page-header-badge">Anagrafica</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+        <div className="page-header-actions">
           <button 
             className="btn btn-referral" 
             onClick={openReferralManager}
@@ -650,13 +643,13 @@ function Customers() {
           <tbody>
             {customers.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                <td colSpan={8} className="table-empty-state">
                   Nessun cliente trovato
                 </td>
               </tr>
             ) : filteredAndSortedCustomers.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                <td colSpan={8} className="table-empty-state">
                   Nessun risultato per i filtri selezionati
                 </td>
               </tr>
@@ -782,59 +775,60 @@ function Customers() {
           <div className="dropdown-backdrop" onClick={() => !isSaving && setShowModal(false)} />
           <div className="modal-overlay">
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{editing ? 'Modifica Cliente' : 'Nuovo Cliente'}</h3>
-              <button 
-                className="close-btn" 
-                onClick={() => setShowModal(false)}
-                disabled={isSaving}
-              >
-                ×
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Nome *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  disabled={isSaving}
-                />
-              </div>
-              <div className="form-group">
-                <label>Referral</label>
-                <Dropdown
-                  value={formData.referralId || ''}
-                  onChange={(value) => setFormData({ ...formData, referralId: value })}
-                  options={formReferralOptions}
-                  placeholder="Seleziona referral"
-                  disabled={isSaving}
-                  searchable={true}
-                  searchPlaceholder="Cerca referral..."
-                />
-              </div>
-              <div className="form-actions">
+              <div className="modal-header">
+                <h3>{editing ? 'Modifica Cliente' : 'Nuovo Cliente'}</h3>
                 <button 
-                  type="button" 
-                  className="btn btn-secondary" 
+                  className="close-btn" 
                   onClick={() => setShowModal(false)}
                   disabled={isSaving}
                 >
-                  Annulla
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={isSaving}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-2)' }}
-                >
-                  {isSaving && <LoadingSpinner size="sm" />}
-                  {isSaving ? 'Salvataggio...' : 'Salva'}
+                  ×
                 </button>
               </div>
-            </form>
+              <div className="modal-body">
+                <form onSubmit={handleSubmit}>
+                  <div className="form-group">
+                    <label>Nome *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Referral</label>
+                    <Dropdown
+                      value={formData.referralId || ''}
+                      onChange={(value) => setFormData({ ...formData, referralId: value })}
+                      options={formReferralOptions}
+                      placeholder="Seleziona referral"
+                      disabled={isSaving}
+                      searchable={true}
+                      searchPlaceholder="Cerca referral..."
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={() => setShowModal(false)}
+                      disabled={isSaving}
+                    >
+                      Annulla
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary btn-with-spinner"
+                      disabled={isSaving}
+                    >
+                      {isSaving && <LoadingSpinner size="sm" />}
+                      {isSaving ? 'Salvataggio...' : 'Salva'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </>
@@ -923,8 +917,8 @@ function Customers() {
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
-                      <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+                    <div className="modal-section-header">
+                      <p>
                         {existingReferrals.length > 0 
                           ? `${existingReferrals.length} ${existingReferrals.length === 1 ? 'referral configurato' : 'referral configurati'}`
                           : 'Nessun referral configurato'
@@ -973,9 +967,9 @@ function Customers() {
                         ))}
                       </div>
                     ) : (
-                      <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--color-text-tertiary)' }}>
+                      <div className="empty-state">
                         <p>Nessun referral configurato.</p>
-                        <p style={{ fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-2)' }}>
+                        <p>
                           {customersForReferral.length === 0 
                             ? 'Tutti i clienti sono già referral'
                             : 'Clicca su "Nuovo Referral" per crearne uno'

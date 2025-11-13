@@ -1358,6 +1358,68 @@
   );
 }
 
+/* === LOADING STATE === */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.loading-state p {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* === EMPTY STATE === */
+.empty-state,
+.table-empty-state {
+  text-align: center;
+  padding: var(--spacing-8);
+  color: var(--color-text-secondary);
+}
+
+.empty-state p,
+.table-empty-state p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.empty-state p + p {
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-2);
+  color: var(--color-text-tertiary);
+}
+
+/* === PAGE HEADER ACTIONS === */
+.page-header-actions {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+/* === BUTTON WITH SPINNER === */
+.btn-with-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+}
+
+/* === MODAL BODY SECTION === */
+.modal-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.modal-section-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
 /* === TOGGLE SWITCH (iPhone style) === */
 .toggle-switch {
   position: relative;
