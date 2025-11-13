@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
@@ -10,6 +10,25 @@ interface NavItem {
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const [forceCollapsed, setForceCollapsed] = useState(false);
+
+  // Collassa la sidebar quando cambia la sezione
+  useEffect(() => {
+    setForceCollapsed(true);
+    // Rimuovi lo stato forzato dopo un breve delay per permettere l'animazione
+    const timer = setTimeout(() => {
+      setForceCollapsed(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  const handleLinkClick = () => {
+    setForceCollapsed(true);
+  };
+
+  const handleMouseLeave = () => {
+    setForceCollapsed(false);
+  };
 
   const navItems: NavItem[] = [
     { path: '/', label: 'Dashboard', icon: '📊' },
@@ -23,7 +42,10 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className="sidebar sidebar-collapsed">
+      <aside 
+        className={`sidebar sidebar-collapsed ${forceCollapsed ? 'force-collapsed' : ''}`}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">D</div>
@@ -40,6 +62,7 @@ const Sidebar: React.FC = () => {
                 to={item.path}
                 className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                 title={item.label}
+                onClick={handleLinkClick}
               >
                 <span className="sidebar-nav-icon">{item.icon}</span>
                 <span className="sidebar-nav-label">{item.label}</span>
