@@ -8,9 +8,31 @@ interface NavItem {
   icon: string;
 }
 
+interface NavItemWithSubmenu extends NavItem {
+  submenu?: NavItem[];
+}
+
+const navItems: NavItemWithSubmenu[] = [
+  { path: '/', label: 'Dashboard', icon: '📊' },
+  { path: '/analysis', label: 'Analisi', icon: '📈' },
+  { path: '/movements', label: 'Movimenti', icon: '🔄' },
+  { path: '/warehouses', label: 'Magazzini', icon: '📦' },
+  { path: '/cash-registers', label: 'Casse', icon: '💰' },
+  {
+    path: '/registro',
+    label: 'Registro',
+    icon: '📋',
+    submenu: [
+      { path: '/products', label: 'Prodotti', icon: '🛍️' },
+      { path: '/customers', label: 'Clienti', icon: '👥' },
+    ],
+  },
+];
+
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const [forceCollapsed, setForceCollapsed] = useState(false);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   // Collassa la sidebar quando cambia la sezione
   useEffect(() => {
@@ -22,23 +44,35 @@ const Sidebar: React.FC = () => {
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
+  // Chiudi submenu quando la sidebar è collassata
+  useEffect(() => {
+    if (forceCollapsed) {
+      setOpenSubmenu(null);
+    }
+  }, [forceCollapsed]);
+
+  // Apri automaticamente il submenu se una delle sue voci è attiva
+  useEffect(() => {
+    const activeItem = navItems.find(item => 
+      item.submenu && item.submenu.some(sub => location.pathname === sub.path)
+    );
+    if (activeItem && activeItem.submenu) {
+      setOpenSubmenu(activeItem.path);
+    }
+  }, [location.pathname]);
+
   const handleLinkClick = () => {
     setForceCollapsed(true);
+    setOpenSubmenu(null);
   };
 
   const handleMouseLeave = () => {
     setForceCollapsed(false);
   };
 
-  const navItems: NavItem[] = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
-    { path: '/warehouses', label: 'Magazzini', icon: '📦' },
-    { path: '/products', label: 'Prodotti', icon: '🛍️' },
-    { path: '/customers', label: 'Clienti', icon: '👥' },
-    { path: '/cash-registers', label: 'Casse', icon: '💰' },
-    { path: '/stock-movements', label: 'Mov. Merce', icon: '📥' },
-    { path: '/cash-movements', label: 'Mov. Denaro', icon: '💸' },
-  ];
+  const handleSubmenuToggle = (path: string) => {
+    setOpenSubmenu(openSubmenu === path ? null : path);
+  };
 
   return (
     <>
@@ -55,18 +89,63 @@ const Sidebar: React.FC = () => {
 
         <nav className="sidebar-nav">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || 
+              (item.submenu && item.submenu.some(sub => location.pathname === sub.path));
+            const hasSubmenu = item.submenu && item.submenu.length > 0;
+            const isSubmenuOpen = openSubmenu === item.path;
+
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                title={item.label}
-                onClick={handleLinkClick}
-              >
-                <span className="sidebar-nav-icon">{item.icon}</span>
-                <span className="sidebar-nav-label">{item.label}</span>
-              </Link>
+              <div key={item.path} className="sidebar-nav-group">
+                {hasSubmenu ? (
+                  <>
+                    <button
+                      className={`sidebar-nav-item ${isActive ? 'active' : ''} ${hasSubmenu ? 'has-submenu' : ''}`}
+                      title={item.label}
+                      onClick={() => handleSubmenuToggle(item.path)}
+                      onMouseEnter={() => {
+                        if (!forceCollapsed) {
+                          setOpenSubmenu(item.path);
+                        }
+                      }}
+                    >
+                      <span className="sidebar-nav-icon">{item.icon}</span>
+                      <span className="sidebar-nav-label">{item.label}</span>
+                      {hasSubmenu && (
+                        <span className={`sidebar-nav-arrow ${isSubmenuOpen ? 'open' : ''}`}>▼</span>
+                      )}
+                    </button>
+                    {hasSubmenu && item.submenu && (
+                      <div className={`sidebar-submenu ${isSubmenuOpen ? 'open' : ''}`}>
+                        {item.submenu.map((subItem) => {
+                          const isSubActive = location.pathname === subItem.path;
+                          return (
+                            <Link
+                              key={subItem.path}
+                              to={subItem.path}
+                              className={`sidebar-nav-item sidebar-submenu-item ${isSubActive ? 'active' : ''}`}
+                              title={subItem.label}
+                              onClick={handleLinkClick}
+                            >
+                              <span className="sidebar-nav-icon">{subItem.icon}</span>
+                              <span className="sidebar-nav-label">{subItem.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                    title={item.label}
+                    onClick={handleLinkClick}
+                  >
+                    <span className="sidebar-nav-icon">{item.icon}</span>
+                    <span className="sidebar-nav-label">{item.label}</span>
+                  </Link>
+                )}
+              </div>
             );
           })}
         </nav>

@@ -69,9 +69,23 @@ function Customers() {
   };
 
   return (
-    <div>
+    <div className="registro-page">
+      <div className="page-breadcrumb">
+        <span className="breadcrumb-item">Registro</span>
+        <span className="breadcrumb-separator">›</span>
+        <span className="breadcrumb-item active">Clienti</span>
+      </div>
       <div className="page-header">
-        <h2>Clienti</h2>
+        <div className="page-header-content">
+          <div className="page-header-title">
+            <span className="page-header-icon">👥</span>
+            <h2>Clienti</h2>
+            <span className="page-header-badge">Anagrafica</span>
+          </div>
+          <p className="page-header-description">
+            Gestione anagrafica clienti. Le interazioni con i prodotti sono gestite nella sezione Movimenti.
+          </p>
+        </div>
         <button className="btn btn-primary" onClick={openNewModal}>
           Nuovo Cliente
         </button>
