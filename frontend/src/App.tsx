@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -11,8 +10,6 @@ import CashMovements from './pages/CashMovements';
 import './App.css';
 
 function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
   return (
     <Router
       future={{
@@ -20,8 +17,8 @@ function App() {
         v7_relativeSplatPath: true,
       }}
     >
-      <div className={`app ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-        <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="app">
+        <Sidebar />
         <div className="app-content">
           <main className="app-main">
             <Routes>

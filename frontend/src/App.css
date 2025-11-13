@@ -12,15 +12,11 @@
 
 .app-content {
   flex: 1;
-  margin-left: var(--sidebar-width);
+  margin-left: var(--sidebar-collapsed-width);
   transition: margin-left var(--transition-base);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.app.sidebar-collapsed .app-content {
-  margin-left: var(--sidebar-collapsed-width);
 }
 
 /* === MAIN CONTENT === */
