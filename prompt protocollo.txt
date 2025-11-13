@@ -1,0 +1,11 @@
+Sei su un progetto TypeScript/Node. Devo integrare il “protocollo anti-regressione” che blocca l’avvio del server se ci sono errori LSP/TypeScript. Ho già copiato i file di documentazione. Ora incolla e adatta questi snippet in `server/index.ts` (o file equivalente):
+
+Trovi gli snippet pronti in protocollo-anti-regressione-snippets.txt: copiali nell’entry server seguendo l’ordine indicato.
+
+1. Assicurati di avere le import `execSync` e `fs`.
+2. Aggiungi le costanti `PROTOCOL_STATUS_FILE` e `LSP_CHECK_REQUIRED_FILE`.
+3. Incolla le funzioni `checkLSPErrors`, `isLSPCheckRequired`, `updateProtocolStatus`.
+4. Prima di creare l’app Express, inserisci il blocco che esegue `checkLSPErrors()` e blocca l’avvio se fallisce.
+5. Aggiungi l’handler `process.on('exit', ...)` per riscrivere `.lsp-check-required`.
+
+Controlla che `npx tsc --noEmit --skipLibCheck` sia disponibile (TypeScript deve essere installato). Mantieni la stessa logica dei log e del `process.exit(1)`.

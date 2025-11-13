@@ -64,9 +64,11 @@ router.post('/', async (req, res) => {
       });
 
       // Aggiorna il saldo della cassa
+      const currentBalanceNum = parseFloat(cashRegister.currentBalance.toString());
+      const amountNum = parseFloat(amount);
       const newBalance = type === 'IN' 
-        ? cashRegister.currentBalance + parseFloat(amount)
-        : cashRegister.currentBalance - parseFloat(amount);
+        ? currentBalanceNum + amountNum
+        : currentBalanceNum - amountNum;
 
       // Verifica che il saldo non diventi negativo
       if (newBalance < 0) {

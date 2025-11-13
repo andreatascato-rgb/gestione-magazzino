@@ -26,30 +26,62 @@ function killPort(port) {
             }
           });
           
-          pids.forEach(pid => {
-            console.log(`  ⚠️  Terminando processo ${pid} sulla porta ${port}`);
-            exec(`taskkill /PID ${pid} /F`, () => {});
+          if (pids.size === 0) {
+            console.log(`  ✅ Porta ${port} già libera`);
+            resolve();
+            return;
+          }
+          
+          // Termina tutti i processi e aspetta che finiscano
+          const killPromises = Array.from(pids).map(pid => {
+            return new Promise((killResolve) => {
+              console.log(`  ⚠️  Terminando processo ${pid} sulla porta ${port}`);
+              exec(`taskkill /PID ${pid} /F`, (killError) => {
+                // Ignora errori (processo già terminato, ecc.)
+                killResolve();
+              });
+            });
+          });
+          
+          Promise.all(killPromises).then(() => {
+            // Aspetta un po' per assicurarsi che la porta sia libera
+            setTimeout(resolve, 500);
           });
         } else {
           console.log(`  ✅ Porta ${port} già libera`);
+          resolve();
         }
-        resolve();
       });
     } else {
       // Linux/Mac
       exec(`lsof -ti:${port}`, (error, stdout) => {
         if (stdout) {
-          const pids = stdout.trim().split('\n');
-          pids.forEach(pid => {
-            if (pid) {
+          const pids = stdout.trim().split('\n').filter(pid => pid);
+          
+          if (pids.length === 0) {
+            console.log(`  ✅ Porta ${port} già libera`);
+            resolve();
+            return;
+          }
+          
+          // Termina tutti i processi e aspetta che finiscano
+          const killPromises = pids.map(pid => {
+            return new Promise((killResolve) => {
               console.log(`  ⚠️  Terminando processo ${pid} sulla porta ${port}`);
-              exec(`kill -9 ${pid}`, () => {});
-            }
+              exec(`kill -9 ${pid}`, (killError) => {
+                // Ignora errori
+                killResolve();
+              });
+            });
+          });
+          
+          Promise.all(killPromises).then(() => {
+            setTimeout(resolve, 500);
           });
         } else {
           console.log(`  ✅ Porta ${port} già libera`);
+          resolve();
         }
-        resolve();
       });
     }
   });
@@ -63,6 +95,7 @@ async function killAllPorts() {
 }
 
 killAllPorts().then(() => {
-  setTimeout(() => process.exit(0), 1000);
+  // Aspetta un po' di più per assicurarsi che le porte siano completamente libere
+  setTimeout(() => process.exit(0), 1500);
 });
 

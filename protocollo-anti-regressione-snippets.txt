@@ -1,0 +1,82 @@
+1. Import da aggiungere in alto
+
+import { execSync } from 'child_process';
+import fs from 'fs';
+(se nel file sono già presenti queste import, saltale)
+
+2. Costanti da mettere dopo gli import
+
+const PROTOCOL_STATUS_FILE = '.protocol-status.json';
+const LSP_CHECK_REQUIRED_FILE = '.lsp-check-required';
+
+3. Funzione checkLSPErrors
+
+function checkLSPErrors(): boolean {
+  try {
+    console.log('🔍 PROTOCOLLO ANTI-REGRESSIONE: Controllo errori LSP/TypeScript...');
+
+    execSync('npx tsc --noEmit --skipLibCheck', { stdio: 'inherit' });
+
+    console.log('✅ Nessun errore LSP rilevato - Sistema sicuro per l\'avvio');
+    return true;
+  } catch (error: any) {
+    console.error('\n🛑 ===== PROTOCOLLO ANTI-REGRESSIONE ULTRA-RIGIDO ATTIVATO =====');
+    console.error('❌ ERRORI LSP/TYPESCRIPT RILEVATI - AVVIO BLOCCATO\n');
+    console.error('📋 DETTAGLI ERRORI:');
+    console.error(error.stdout?.toString() || error.message);
+    console.error('\n🚨 Il server NON può avviarsi con errori LSP presenti');
+    console.error('================================================\n');
+    return false;
+  }
+}
+
+4. Funzione isLSPCheckRequired
+
+function isLSPCheckRequired(): boolean {
+  return true;
+}
+
+5. Funzione updateProtocolStatus
+
+function updateProtocolStatus(lspClean: boolean): void {
+  const status = {
+    lastLSPCheck: new Date().toISOString(),
+    lspClean,
+    protocolApplied: lspClean
+  };
+
+  fs.writeFileSync(PROTOCOL_STATUS_FILE, JSON.stringify(status, null, 2));
+
+  if (lspClean && fs.existsSync(LSP_CHECK_REQUIRED_FILE)) {
+    fs.unlinkSync(LSP_CHECK_REQUIRED_FILE);
+  }
+}
+
+
+6   Blocco da eseguire prima di creare l’app Express
+
+(incollare vicino all’inizio del file, prima di const app = express() o equivalente)
+
+console.log('🚀 AVVIO SERVER CON PROTOCOLLO ANTI-REGRESSIONE INTEGRATO');
+
+if (process.env.NODE_ENV !== 'production') {
+  const lspClean = checkLSPErrors();
+
+  if (!lspClean) {
+    console.error('🛑 AVVIO BLOCCATO - Applicare protocollo anti-regressione prima di continuare');
+    process.exit(1);
+  }
+
+  updateProtocolStatus(true);
+  console.log('🎯 PROTOCOLLO SUPERATO - Avvio server autorizzato\n');
+} else {
+  console.log('✅ PRODUZIONE: Protocollo LSP skippato - Bundle già verificato\n');
+}
+
+
+7. Handler process.on('exit', ...)
+
+(incollare più in basso, dopo la configurazione iniziale, ma prima dell’avvio del server; posizione non critica)
+
+Blocco da eseguire prima di creare l’app Express
+(incollare vicino all’inizio del file, prima di const app = express() o equivalente)

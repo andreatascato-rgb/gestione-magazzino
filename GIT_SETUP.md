@@ -25,7 +25,7 @@ git config --global user.email "tua.email@example.com"
 ### 1. Inizializza Git nel progetto
 
 ```bash
-# Dalla root del progetto (D:\Andrea\A)
+# Dalla root del progetto
 git init
 ```
 
