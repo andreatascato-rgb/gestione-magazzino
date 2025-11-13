@@ -212,7 +212,8 @@
   overflow: hidden;
 }
 
-.sidebar-nav-item::before {
+/* Linea verticale solo per elementi senza submenu */
+.sidebar-nav-item:not(.has-submenu)::before {
   content: '';
   position: absolute;
   left: 0;
@@ -229,6 +230,12 @@
     0 0 8px rgba(230, 194, 0, 0.3);
 }
 
+/* Rimuovi completamente la linea verticale per tutti gli elementi con submenu */
+.sidebar-nav-item.has-submenu::before {
+  display: none !important;
+  content: none !important;
+}
+
 .sidebar-nav-item:hover {
   background: linear-gradient(
     90deg,
@@ -243,7 +250,8 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.sidebar-nav-item.active {
+/* Stile attivo - solo per elementi senza submenu */
+.sidebar-nav-item.active:not(.has-submenu) {
   background: linear-gradient(
     90deg,
     rgba(230, 194, 0, 0.18) 0%,
@@ -259,9 +267,70 @@
   border-left: 1px solid rgba(230, 194, 0, 0.3);
 }
 
-.sidebar-nav-item.active::before {
+.sidebar-nav-item.active:not(.has-submenu)::before {
   opacity: 1;
   transform: scaleY(1);
+  display: block;
+}
+
+/* Rimuovi completamente qualsiasi indicatore verticale per elementi con submenu */
+.sidebar-nav-item.has-submenu {
+  border-left: none !important;
+}
+
+/* Evidenziazione per elementi con submenu quando una sottovoce è attiva */
+.sidebar-nav-item.has-submenu.active {
+  background: linear-gradient(
+    90deg,
+    rgba(230, 194, 0, 0.18) 0%,
+    rgba(230, 194, 0, 0.1) 50%,
+    transparent 100%
+  ) !important;
+  color: var(--color-primary) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  box-shadow: 
+    inset 0 0 30px rgba(230, 194, 0, 0.12),
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(230, 194, 0, 0.1) !important;
+  border-left: none !important;
+}
+
+/* Quando il submenu è aperto ma NON è attivo (nessuna sottovoce attiva), rimuovi evidenziazione */
+.sidebar-nav-item.has-submenu:not(.active),
+.sidebar-nav-item.has-submenu.submenu-open:not(.active) {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-weight: var(--font-weight-medium) !important;
+}
+
+/* Hover normale per elementi con submenu */
+.sidebar-nav-item.has-submenu:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  ) !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: 
+    inset 0 0 20px rgba(230, 194, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Forza la rimozione della linea verticale per elementi con submenu */
+.sidebar-nav-item.has-submenu::before,
+.sidebar-nav-item.has-submenu.active::before,
+.sidebar-nav-item.active.has-submenu::before,
+.sidebar-nav-item.has-submenu.submenu-open::before {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  content: none !important;
+  transform: scale(0) !important;
+  pointer-events: none !important;
 }
 
 .sidebar-nav-icon {
@@ -308,6 +377,22 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1);
+  position: relative;
+}
+
+/* Rimuovi qualsiasi linea verticale dal gruppo quando contiene un submenu aperto */
+.sidebar-nav-group:has(.sidebar-submenu.open) .sidebar-nav-item.active {
+  border-left: none !important;
+}
+
+.sidebar-nav-group:has(.sidebar-submenu.open) .sidebar-nav-item.active::before {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  content: none !important;
+  transform: scale(0) !important;
 }
 
 /* Sidebar Nav Item as Button */
@@ -352,18 +437,18 @@
   transition: max-height var(--transition-base), opacity var(--transition-base), padding var(--transition-base);
   padding-left: 0;
   margin-left: var(--spacing-4);
-  border-left: 2px solid transparent;
+  border-left: none; /* Rimossa la linea verticale gialla */
 }
 
 .sidebar-submenu.open {
   max-height: 500px;
   opacity: 1;
   padding-left: var(--spacing-3);
-  border-left-color: rgba(230, 194, 0, 0.2);
+  border-left: none; /* Rimossa la linea verticale gialla */
 }
 
 .sidebar:hover .sidebar-submenu.open {
-  border-left-color: rgba(230, 194, 0, 0.3);
+  border-left: none; /* Rimossa la linea verticale gialla anche al hover */
 }
 
 .sidebar-submenu-item {
@@ -373,8 +458,15 @@
   position: relative;
 }
 
+/* Rimuovi completamente qualsiasi linea verticale dai submenu items */
 .sidebar-submenu-item::before {
-  left: var(--spacing-4);
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  content: none !important;
+  transform: scale(0) !important;
 }
 
 .sidebar-submenu-item:hover {
@@ -386,6 +478,7 @@
   );
 }
 
+/* Elemento attivo nel submenu - senza linea verticale */
 .sidebar-submenu-item.active {
   background: linear-gradient(
     90deg,
@@ -393,6 +486,17 @@
     rgba(230, 194, 0, 0.06) 50%,
     transparent 100%
   );
+  border-left: none !important;
+}
+
+.sidebar-submenu-item.active::before {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  content: none !important;
+  transform: scale(0) !important;
 }
 
 /* Sidebar Footer */

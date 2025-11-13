@@ -281,7 +281,7 @@
   width: 100% !important;
   border-collapse: collapse !important;
   border-spacing: 0 !important;
-  table-layout: auto !important;
+  table-layout: fixed !important; /* Layout fisso per controllo dimensioni colonne */
 }
 
 .registro-page .table-container table thead {
@@ -299,15 +299,16 @@
   border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Stile base per tutte le celle - Centrate verticalmente e orizzontalmente */
 .registro-page .table-container table th {
-  padding: 0.75rem 1rem !important;
-  text-align: left !important;
+  padding: 0.875rem 1rem !important;
+  text-align: center !important; /* Centrate di default */
   font-weight: var(--font-weight-semibold) !important;
   font-size: var(--font-size-sm) !important;
   color: var(--color-text-primary) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  vertical-align: middle !important;
+  vertical-align: middle !important; /* Centrate verticalmente */
   white-space: nowrap !important;
   border-bottom: none !important;
   text-shadow: none !important;
@@ -349,37 +350,111 @@
   border-bottom: none !important;
 }
 
+/* Stile base per tutte le celle dati - Centrate verticalmente e orizzontalmente */
 .registro-page .table-container table td {
-  padding: 0.75rem 1rem !important;
+  padding: 0.875rem 1rem !important;
   color: var(--color-text-primary) !important;
   font-size: var(--font-size-base) !important;
-  vertical-align: middle !important;
-  text-align: left !important;
+  vertical-align: middle !important; /* Centrate verticalmente */
+  text-align: center !important; /* Centrate orizzontalmente di default */
   white-space: nowrap !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
   position: static !important;
   transition: none !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
-/* Allineamento specifico per colonne */
+/* Dimensioni colonne ottimizzate (come Excel) */
+.registro-page .table-container table th.col-id,
+.registro-page .table-container table td.col-id {
+  width: 10% !important;
+  min-width: 80px !important;
+  text-align: center !important;
+}
+
+.registro-page .table-container table th.col-nome,
+.registro-page .table-container table td.col-nome {
+  width: 20% !important;
+  min-width: 150px !important;
+  text-align: center !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
 .registro-page .table-container table th.col-spesa,
 .registro-page .table-container table td.col-spesa {
-  text-align: right !important;
+  width: 14% !important;
+  min-width: 120px !important;
+  text-align: right !important; /* Numeri allineati a destra */
+  padding-right: 2.5rem !important; /* Aumentato padding destro per più spazio */
 }
 
 .registro-page .table-container table th.col-deal,
 .registro-page .table-container table td.col-deal {
+  width: 16% !important;
+  min-width: 140px !important;
   text-align: center !important;
+  padding-left: 2rem !important; /* Aumentato padding sinistro per più spazio tra colonne */
+}
+
+.registro-page .table-container table th.col-referral,
+.registro-page .table-container table td.col-referral {
+  width: 20% !important;
+  min-width: 150px !important;
+  text-align: center !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
 }
 
 .registro-page .table-container table th.col-attivo,
 .registro-page .table-container table td.col-attivo {
+  width: 10% !important;
+  min-width: 100px !important;
   text-align: center !important;
 }
 
 .registro-page .table-container table th.col-azioni,
 .registro-page .table-container table td.col-azioni {
+  width: 10% !important;
+  min-width: 120px !important;
   text-align: center !important;
+}
+
+/* Assicura che il contenuto interno delle celle centrate sia centrato */
+.registro-page .table-container table td.col-azioni .action-buttons {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+  width: fit-content !important;
+  gap: 0.5rem !important;
+}
+
+.registro-page .table-container table td.col-attivo {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.registro-page .table-container table td.col-attivo .table-toggle-switch {
+  margin: 0 !important;
+}
+
+.registro-page .table-container table td.col-nome,
+.registro-page .table-container table td.col-referral {
+  text-align: center !important;
+}
+
+/* Assicura che il contenuto delle celle sia ben centrato */
+.registro-page .table-container table td.col-id,
+.registro-page .table-container table td.col-nome,
+.registro-page .table-container table td.col-referral,
+.registro-page .table-container table td.col-deal,
+.registro-page .table-container table td.col-attivo,
+.registro-page .table-container table td.col-azioni {
+  display: table-cell !important;
+  vertical-align: middle !important;
 }
 
 
@@ -744,6 +819,101 @@
 
 .toggle-switch input:checked:active + .toggle-slider:before {
   transform: translateX(16px);
+}
+
+/* === TOGGLE SWITCH (iPhone style) - Tabella === */
+.table-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 51px;
+  height: 31px;
+  cursor: pointer;
+  margin: 0 auto;
+}
+
+.table-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.table-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-neutral-600); /* Grigio quando spento - coerente con palette */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.table-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 27px;
+  width: 27px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.table-toggle-switch input:checked + .table-toggle-slider {
+  background-color: var(--color-success-600); /* Verde quando acceso - coerente con palette */
+  border-color: var(--color-success-600);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 3px rgba(22, 163, 74, 0.15); /* Glow verde */
+}
+
+.table-toggle-switch input:checked + .table-toggle-slider:before {
+  transform: translateX(20px);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.table-toggle-switch input:focus + .table-toggle-slider {
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.table-toggle-switch input:checked:focus + .table-toggle-slider {
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.table-toggle-switch:hover .table-toggle-slider {
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.table-toggle-switch:hover input:checked + .table-toggle-slider {
+  background-color: var(--color-success-500); /* Verde più chiaro al hover */
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.table-toggle-switch:active .table-toggle-slider:before {
+  width: 29px;
+}
+
+.table-toggle-switch input:checked:active + .table-toggle-slider:before {
+  transform: translateX(18px);
+  width: 29px;
 }
 
 /* === ACTION BUTTONS WITH ICONS === */

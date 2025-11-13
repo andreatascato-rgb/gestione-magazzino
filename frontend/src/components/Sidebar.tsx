@@ -51,13 +51,17 @@ const Sidebar: React.FC = () => {
     }
   }, [forceCollapsed]);
 
-  // Apri automaticamente il submenu se una delle sue voci è attiva
+  // Apri automaticamente il submenu se una delle sue voci è attiva (nella route corrente)
   useEffect(() => {
     const activeItem = navItems.find(item => 
       item.submenu && item.submenu.some(sub => location.pathname === sub.path)
     );
     if (activeItem && activeItem.submenu) {
-      setOpenSubmenu(activeItem.path);
+      // Se siamo su una delle sottovoci, apri il submenu
+      const isOnSubItem = activeItem.submenu.some(sub => location.pathname === sub.path);
+      if (isOnSubItem) {
+        setOpenSubmenu(activeItem.path);
+      }
     }
   }, [location.pathname]);
 
@@ -68,6 +72,14 @@ const Sidebar: React.FC = () => {
 
   const handleMouseLeave = () => {
     setForceCollapsed(false);
+    // Chiudi il submenu quando si esce dalla sidebar solo se non c'è una sottovoce attiva
+    // Se una sottovoce è attiva, mantieni il submenu aperto (verrà riaperto dall'useEffect)
+    const activeSubmenuItem = navItems.find(item => 
+      item.submenu && item.submenu.some(sub => location.pathname === sub.path)
+    );
+    if (!activeSubmenuItem) {
+      setOpenSubmenu(null);
+    }
   };
 
   const handleSubmenuToggle = (path: string) => {
@@ -89,17 +101,23 @@ const Sidebar: React.FC = () => {
 
         <nav className="sidebar-nav">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path || 
-              (item.submenu && item.submenu.some(sub => location.pathname === sub.path));
+            // Per elementi con submenu: evidenziazione quando una sottovoce è attiva
             const hasSubmenu = item.submenu && item.submenu.length > 0;
             const isSubmenuOpen = openSubmenu === item.path;
+            const hasActiveSubItem = item.submenu && item.submenu.some(sub => location.pathname === sub.path);
+            
+            // Per elementi con submenu: attivo se una sottovoce è attiva (indipendentemente dal submenu aperto/chiuso)
+            // Per elementi senza submenu: attivo se la route corrisponde
+            const isActive = hasSubmenu 
+              ? hasActiveSubItem  // Evidenziazione quando una sottovoce è attiva
+              : location.pathname === item.path;
 
             return (
               <div key={item.path} className="sidebar-nav-group">
                 {hasSubmenu ? (
                   <>
                     <button
-                      className={`sidebar-nav-item ${isActive ? 'active' : ''} ${hasSubmenu ? 'has-submenu' : ''}`}
+                      className={`sidebar-nav-item ${isActive ? 'active' : ''} has-submenu ${isSubmenuOpen ? 'submenu-open' : ''}`}
                       title={item.label}
                       onClick={() => handleSubmenuToggle(item.path)}
                       onMouseEnter={() => {
@@ -115,7 +133,19 @@ const Sidebar: React.FC = () => {
                       )}
                     </button>
                     {hasSubmenu && item.submenu && (
-                      <div className={`sidebar-submenu ${isSubmenuOpen ? 'open' : ''}`}>
+                      <div 
+                        className={`sidebar-submenu ${isSubmenuOpen ? 'open' : ''}`}
+                        onMouseEnter={() => {
+                          // Mantieni il submenu aperto quando il mouse è sopra
+                          if (!forceCollapsed) {
+                            setOpenSubmenu(item.path);
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          // Chiudi sempre il submenu quando si esce dal submenu
+                          setOpenSubmenu(null);
+                        }}
+                      >
                         {item.submenu.map((subItem) => {
                           const isSubActive = location.pathname === subItem.path;
                           return (

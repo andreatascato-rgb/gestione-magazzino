@@ -8,10 +8,7 @@ function Customers() {
   const [editing, setEditing] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({ 
     name: '', 
-    spesa: '0', 
-    ultimoDeal: '', 
-    referralId: '', 
-    attivo: true 
+    referralId: ''
   });
 
   useEffect(() => {
@@ -45,22 +42,28 @@ function Customers() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const submitData = {
-        name: formData.name,
-        spesa: formData.spesa,
-        ultimoDeal: formData.ultimoDeal || null,
-        referralId: formData.referralId || null,
-        attivo: formData.attivo,
-      };
-
       if (editing) {
+        // Per modifica: spesa e ultimoDeal non vengono inviati (vengono calcolati automaticamente dal backend)
+        const submitData = {
+          name: formData.name,
+          referralId: formData.referralId || null,
+          attivo: editing.attivo, // Mantieni stato attuale
+          // spesa e ultimoDeal non vengono inviati - il backend li manterrà invariati o li ricalcolerà
+        };
         await api.put(`/customers/${editing.id}`, submitData);
       } else {
+        // Per nuovo cliente: spesa e ultimoDeal verranno inizializzati automaticamente dal backend
+        const submitData = {
+          name: formData.name,
+          referralId: formData.referralId || null,
+          attivo: true, // Nuovo cliente sempre attivo di default
+          // spesa e ultimoDeal non vengono inviati - il backend li inizializzerà a 0 e null
+        };
         await api.post('/customers', submitData);
       }
       setShowModal(false);
       setEditing(null);
-      setFormData({ name: '', spesa: '0', ultimoDeal: '', referralId: '', attivo: true });
+      setFormData({ name: '', referralId: '' });
       loadCustomers();
     } catch (error: any) {
       console.error('Error saving customer:', error);
@@ -72,10 +75,7 @@ function Customers() {
     setEditing(customer);
     setFormData({
       name: customer.name,
-      spesa: customer.spesa.toString(),
-      ultimoDeal: customer.ultimoDeal ? new Date(customer.ultimoDeal).toISOString().split('T')[0] : '',
       referralId: customer.referralId || '',
-      attivo: customer.attivo,
     });
     setShowModal(true);
   };
@@ -91,9 +91,30 @@ function Customers() {
     }
   };
 
+  const handleToggleAttivo = async (id: string, attivo: boolean) => {
+    try {
+      const customer = customers.find(c => c.id === id);
+      if (!customer) return;
+      
+      // Aggiorna solo lo stato attivo - spesa e ultimoDeal vengono calcolati automaticamente
+      await api.put(`/customers/${id}`, {
+        name: customer.name,
+        referralId: customer.referralId || null,
+        attivo: attivo,
+        // spesa e ultimoDeal non vengono inviati - il backend li manterrà invariati
+      });
+      loadCustomers();
+    } catch (error: any) {
+      console.error('Error toggling attivo:', error);
+      alert(error.response?.data?.error || 'Errore nell\'aggiornamento dello stato');
+      // Ripristina lo stato precedente in caso di errore
+      loadCustomers();
+    }
+  };
+
   const openNewModal = () => {
     setEditing(null);
-    setFormData({ name: '', spesa: '0', ultimoDeal: '', referralId: '', attivo: true });
+    setFormData({ name: '', referralId: '' });
     setShowModal(true);
   };
 
@@ -146,11 +167,11 @@ function Customers() {
         <table>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Nome</th>
+              <th className="col-id">ID</th>
+              <th className="col-nome">Nome</th>
               <th className="col-spesa">Spesa</th>
               <th className="col-deal">Ultimo Deal</th>
-              <th>Referral</th>
+              <th className="col-referral">Referral</th>
               <th className="col-attivo">Attivo</th>
               <th className="col-azioni">Azioni</th>
             </tr>
@@ -165,18 +186,21 @@ function Customers() {
             ) : (
               customers.map((customer) => (
                 <tr key={customer.id}>
-                  <td>{customer.id}</td>
-                  <td>{customer.name}</td>
+                  <td className="col-id">{customer.id}</td>
+                  <td className="col-nome">{customer.name}</td>
                   <td className="col-spesa">{formatCurrency(customer.spesa || 0)}</td>
                   <td className="col-deal">{formatDate(customer.ultimoDeal)}</td>
-                  <td>{customer.referral?.name || '-'}</td>
+                  <td className="col-referral">{customer.referral?.name || '-'}</td>
                   <td className="col-attivo">
-                    <span style={{ 
-                      color: customer.attivo ? '#4CAF50' : '#999',
-                      fontWeight: '500'
-                    }}>
-                      {customer.attivo ? 'ON' : 'OFF'}
-                    </span>
+                    <label className="table-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={customer.attivo}
+                        onChange={(e) => handleToggleAttivo(customer.id, e.target.checked)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="table-toggle-slider"></span>
+                    </label>
                   </td>
                   <td className="col-azioni">
                     <div className="action-buttons">
@@ -223,24 +247,6 @@ function Customers() {
                 />
               </div>
               <div className="form-group">
-                <label>Spesa (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.spesa}
-                  onChange={(e) => setFormData({ ...formData, spesa: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label>Ultimo Deal</label>
-                <input
-                  type="date"
-                  value={formData.ultimoDeal}
-                  onChange={(e) => setFormData({ ...formData, ultimoDeal: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
                 <label>Referral</label>
                 <select
                   value={formData.referralId}
@@ -253,22 +259,6 @@ function Customers() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="form-group">
-                <label>Attivo</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
-                  <label className="toggle-switch" style={{ margin: 0 }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.attivo}
-                      onChange={(e) => setFormData({ ...formData, attivo: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-                    {formData.attivo ? 'Attivo' : 'Inattivo'}
-                  </span>
-                </div>
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
