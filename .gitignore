@@ -7,6 +7,8 @@ dist/
 build/
 */dist/
 */build/
+.vite/
+*/.vite/
 
 # Environment variables
 .env
