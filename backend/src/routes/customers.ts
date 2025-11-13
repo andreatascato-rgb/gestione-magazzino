@@ -42,6 +42,11 @@ router.get('/', async (req, res) => {
             name: true,
           },
         },
+        _count: {
+          select: {
+            referredBy: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -54,7 +59,10 @@ router.get('/', async (req, res) => {
       ultimoDeal: customer.ultimoDeal ? customer.ultimoDeal.toISOString() : null,
       referralId: customer.referralId,
       referral: customer.referral,
+      referredByCount: customer._count.referredBy,
       attivo: customer.attivo,
+      isReferral: customer.isReferral,
+      referralColor: customer.referralColor,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     }));
@@ -78,6 +86,11 @@ router.get('/:id', async (req, res) => {
             name: true,
           },
         },
+        _count: {
+          select: {
+            referredBy: true,
+          },
+        },
       },
     });
     if (!customer) {
@@ -92,7 +105,10 @@ router.get('/:id', async (req, res) => {
       ultimoDeal: customer.ultimoDeal ? customer.ultimoDeal.toISOString() : null,
       referralId: customer.referralId,
       referral: customer.referral,
+      referredByCount: customer._count.referredBy,
       attivo: customer.attivo,
+      isReferral: customer.isReferral,
+      referralColor: customer.referralColor,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };
@@ -141,6 +157,11 @@ router.post('/', async (req, res) => {
             name: true,
           },
         },
+        _count: {
+          select: {
+            referredBy: true,
+          },
+        },
       },
     });
     
@@ -152,7 +173,10 @@ router.post('/', async (req, res) => {
       ultimoDeal: customer.ultimoDeal ? customer.ultimoDeal.toISOString() : null,
       referralId: customer.referralId,
       referral: customer.referral,
+      referredByCount: customer._count.referredBy,
       attivo: customer.attivo,
+      isReferral: customer.isReferral,
+      referralColor: customer.referralColor,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };
@@ -199,6 +223,11 @@ router.put('/:id', async (req, res) => {
             name: true,
           },
         },
+        _count: {
+          select: {
+            referredBy: true,
+          },
+        },
       },
     });
     
@@ -210,7 +239,10 @@ router.put('/:id', async (req, res) => {
       ultimoDeal: customer.ultimoDeal ? customer.ultimoDeal.toISOString() : null,
       referralId: customer.referralId,
       referral: customer.referral,
+      referredByCount: customer._count.referredBy,
       attivo: customer.attivo,
+      isReferral: customer.isReferral,
+      referralColor: customer.referralColor,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };
@@ -219,6 +251,55 @@ router.put('/:id', async (req, res) => {
   } catch (error: any) {
     console.error('Error updating customer:', error);
     res.status(500).json({ error: 'Errore nell\'aggiornamento del cliente' });
+  }
+});
+
+// PUT /api/customers/:id/referral - Aggiorna impostazioni referral
+router.put('/:id/referral', async (req, res) => {
+  try {
+    const { isReferral, referralColor } = req.body;
+    
+    const customer = await prisma.customer.update({
+      where: { id: req.params.id },
+      data: {
+        isReferral: isReferral !== undefined ? isReferral : undefined,
+        referralColor: referralColor !== undefined ? referralColor : undefined,
+      },
+      include: {
+        referral: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            referredBy: true,
+          },
+        },
+      },
+    });
+    
+    // Converti Decimal a number e DateTime a string per il frontend
+    const formattedCustomer = {
+      id: customer.id,
+      name: customer.name,
+      spesa: parseFloat(customer.spesa.toString()),
+      ultimoDeal: customer.ultimoDeal ? customer.ultimoDeal.toISOString() : null,
+      referralId: customer.referralId,
+      referral: customer.referral,
+      referredByCount: customer._count.referredBy,
+      attivo: customer.attivo,
+      isReferral: customer.isReferral,
+      referralColor: customer.referralColor,
+      createdAt: customer.createdAt.toISOString(),
+      updatedAt: customer.updatedAt.toISOString(),
+    };
+    
+    res.json(formattedCustomer);
+  } catch (error: any) {
+    console.error('Error updating referral:', error);
+    res.status(500).json({ error: 'Errore nell\'aggiornamento del referral' });
   }
 });
 

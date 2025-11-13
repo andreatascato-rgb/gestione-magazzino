@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Warehouse } from '../types';
+import { useToast, ConfirmDialog } from '../components';
 
 function Warehouses() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Warehouse | null>(null);
   const [formData, setFormData] = useState({ name: '', address: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; warehouseId: string | null }>({
+    isOpen: false,
+    warehouseId: null,
+  });
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadWarehouses();
@@ -18,7 +25,7 @@ function Warehouses() {
       setWarehouses(response.data);
     } catch (error) {
       console.error('Error loading warehouses:', error);
-      alert('Errore nel caricamento dei magazzini');
+      showToast('Errore nel caricamento dei magazzini', 'error');
     }
   };
 
@@ -30,13 +37,18 @@ function Warehouses() {
       } else {
         await api.post('/warehouses', formData);
       }
+      const wasEditing = !!editing;
       setShowModal(false);
       setEditing(null);
       setFormData({ name: '', address: '' });
+      showToast(
+        wasEditing ? 'Magazzino modificato con successo' : 'Magazzino creato con successo',
+        'success'
+      );
       loadWarehouses();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving warehouse:', error);
-      alert('Errore nel salvataggio del magazzino');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio del magazzino', 'error');
     }
   };
 
@@ -46,14 +58,21 @@ function Warehouses() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questo magazzino?')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, warehouseId: id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.warehouseId) return;
     try {
-      await api.delete(`/warehouses/${id}`);
+      await api.delete(`/warehouses/${deleteConfirm.warehouseId}`);
+      showToast('Magazzino eliminato con successo', 'success');
+      setDeleteConfirm({ isOpen: false, warehouseId: null });
       loadWarehouses();
     } catch (error) {
       console.error('Error deleting warehouse:', error);
-      alert('Errore nell\'eliminazione del magazzino');
+      showToast('Errore nell\'eliminazione del magazzino', 'error');
+      setDeleteConfirm({ isOpen: false, warehouseId: null });
     }
   };
 
@@ -90,7 +109,7 @@ function Warehouses() {
                   <button className="btn btn-secondary" onClick={() => handleEdit(warehouse)}>
                     Modifica
                   </button>
-                  <button className="btn btn-danger" onClick={() => handleDelete(warehouse.id)}>
+                  <button className="btn btn-danger" onClick={() => handleDeleteClick(warehouse.id)}>
                     Elimina
                   </button>
                 </td>
@@ -137,6 +156,17 @@ function Warehouses() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, warehouseId: null })}
+        onConfirm={handleDeleteConfirm}
+        title="Elimina Magazzino"
+        message="Sei sicuro di voler eliminare questo magazzino? Questa azione non può essere annullata."
+        confirmText="Elimina"
+        cancelText="Annulla"
+        variant="danger"
+      />
     </div>
   );
 }

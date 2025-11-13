@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { StockMovement, Product, Warehouse, MovementType } from '../types';
+import { useToast } from '../components';
 
 function StockMovements() {
   const [movements, setMovements] = useState<StockMovement[]>([]);
@@ -15,6 +16,8 @@ function StockMovements() {
     reason: '',
     date: new Date().toISOString().split('T')[0],
   });
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -32,7 +35,7 @@ function StockMovements() {
       setWarehouses(warehousesRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      alert('Errore nel caricamento dei dati');
+      showToast('Errore nel caricamento dei dati', 'error');
     }
   };
 
@@ -49,10 +52,11 @@ function StockMovements() {
         reason: '',
         date: new Date().toISOString().split('T')[0],
       });
+      showToast('Movimentazione creata con successo', 'success');
       loadData();
     } catch (error: any) {
       console.error('Error saving movement:', error);
-      alert(error.response?.data?.error || 'Errore nel salvataggio della movimentazione');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio della movimentazione', 'error');
     }
   };
 

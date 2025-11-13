@@ -3,6 +3,35 @@
    Professional Management System - Soft Dark Theme
    ============================================ */
 
+/* Backdrop condiviso per modal e dropdown */
+.shared-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.55) 50%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: fadeIn 0.3s ease-out;
+  will-change: opacity;
+  z-index: 999;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .app {
   min-height: 100vh;
   display: flex;
@@ -240,12 +269,53 @@
   background-color: var(--color-neutral-600);
   color: var(--color-text-inverse);
   box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--color-neutral-700);
-  box-shadow: var(--shadow-base);
+  border-color: rgba(230, 194, 0, 0.3);
+  box-shadow: var(--shadow-base), 0 0 0 1px rgba(230, 194, 0, 0.1);
   transform: translateY(-1px);
+}
+
+.btn-referral {
+  background: linear-gradient(135deg, 
+    rgba(115, 115, 115, 0.9) 0%, 
+    rgba(64, 64, 64, 0.95) 100%);
+  color: var(--color-text-inverse);
+  box-shadow: 
+    0 4px 14px 0 rgba(0, 0, 0, 0.3),
+    0 2px 6px 0 rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: var(--transition-luxury);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.btn-referral:hover:not(:disabled) {
+  background: linear-gradient(135deg, 
+    rgba(163, 163, 163, 0.85) 0%, 
+    rgba(115, 115, 115, 0.9) 100%);
+  box-shadow: 
+    0 6px 20px 0 rgba(0, 0, 0, 0.4),
+    0 4px 12px 0 rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 0 15px rgba(230, 194, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-referral:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 
+    0 4px 14px 0 rgba(0, 0, 0, 0.3),
+    0 2px 6px 0 rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .btn-outline {
@@ -354,22 +424,36 @@
 }
 
 .filter-group-inline select {
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-3) calc(var(--spacing-4) + 1.5rem) var(--spacing-3) var(--spacing-4);
   border: 1px solid var(--color-border-dark);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: inherit;
-  transition: all var(--transition-luxury);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--glass-bg-light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-3) center;
+  background-size: 12px;
   color: var(--color-text-primary);
   box-shadow: 
     inset 0 1px 2px rgba(0, 0, 0, 0.1),
     0 1px 0 rgba(255, 255, 255, 0.02);
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  will-change: border-color, box-shadow, transform;
 }
 
 .filter-group-inline select:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(230, 194, 0, 0.4);
+  background-color: var(--glass-bg);
+  transform: translateY(-1px);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(230, 194, 0, 0.1);
 }
 
 .filter-group-inline select:focus {
@@ -381,6 +465,15 @@
     inset 0 1px 2px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(230, 194, 0, 0.05);
   background: var(--glass-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-3) center;
+  background-size: 12px;
+  transform: scale(1.01);
+}
+
+.filter-group-inline select:active {
+  transform: scale(0.99);
 }
 
 .advanced-filters {
@@ -426,17 +519,29 @@
 .filter-group input[type="number"],
 .filter-group input[type="date"] {
   width: 100%;
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-3) calc(var(--spacing-4) + 1.5rem) var(--spacing-3) var(--spacing-4);
   border: 1px solid var(--color-border-dark);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: inherit;
-  transition: all var(--transition-luxury);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--glass-bg-light);
   color: var(--color-text-primary);
   box-shadow: 
     inset 0 1px 2px rgba(0, 0, 0, 0.1),
     0 1px 0 rgba(255, 255, 255, 0.02);
+  will-change: border-color, box-shadow, transform;
+}
+
+.filter-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-3) center;
+  background-size: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
 }
 
 .filter-group select:focus,
@@ -450,12 +555,53 @@
     inset 0 1px 2px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(230, 194, 0, 0.05);
   background: var(--glass-bg);
+  transform: scale(1.01);
+}
+
+.filter-group select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-3) center;
+  background-size: 12px;
 }
 
 .filter-group select:hover,
 .filter-group input[type="number"]:hover,
 .filter-group input[type="date"]:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(230, 194, 0, 0.4);
+  background-color: var(--glass-bg);
+  transform: translateY(-1px);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(230, 194, 0, 0.1);
+}
+
+.filter-group select:active {
+  transform: scale(0.99);
+}
+
+/* Stili per le opzioni del select */
+.filter-group-inline select option,
+.filter-group select option,
+.form-group select option {
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: none;
+}
+
+.filter-group-inline select option:hover,
+.filter-group select option:hover,
+.form-group select option:hover {
+  background: rgba(230, 194, 0, 0.1);
+}
+
+.filter-group-inline select option:checked,
+.filter-group select option:checked,
+.form-group select option:checked {
+  background: rgba(230, 194, 0, 0.2);
+  color: var(--color-primary);
 }
 
 .filter-results-count {
@@ -529,9 +675,21 @@
   position: relative !important;
 }
 
+/* Rimuove completamente gli pseudo-elementi da Table.css */
 .registro-page .table-container table thead::before,
 .registro-page .table-container table thead::after {
   display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.registro-page .table-container table tbody tr::before {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
 }
 
 .registro-page .table-container table thead tr {
@@ -541,26 +699,29 @@
 /* Stile base per tutte le celle - Centrate verticalmente e orizzontalmente */
 .registro-page .table-container table th {
   padding: 0.875rem 1rem !important;
-  text-align: center !important; /* Centrate di default */
+  text-align: center !important;
   font-weight: var(--font-weight-semibold) !important;
   font-size: var(--font-size-sm) !important;
   color: var(--color-text-primary) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  vertical-align: middle !important; /* Centrate verticalmente */
+  vertical-align: middle !important;
   white-space: nowrap !important;
   border-bottom: none !important;
   text-shadow: none !important;
   position: static !important;
+  display: table-cell !important;
+  box-sizing: border-box !important;
 }
 
 .registro-page .table-container table tbody tr {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-  transition: background-color var(--transition-base) !important;
+  transition: all var(--transition-base) !important;
   animation: none !important;
   background: transparent !important;
   box-shadow: none !important;
   position: relative !important;
+  cursor: default !important;
 }
 
 .registro-page .table-container table tbody tr::before {
@@ -568,8 +729,17 @@
 }
 
 .registro-page .table-container table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02) !important;
-  box-shadow: none !important;
+  background: linear-gradient(
+    90deg,
+    rgba(230, 194, 0, 0.08) 0%,
+    rgba(230, 194, 0, 0.04) 50%,
+    transparent 100%
+  ) !important;
+  box-shadow: 
+    inset 0 0 20px rgba(230, 194, 0, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  transform: translateX(2px) !important;
+  border-left: 2px solid rgba(230, 194, 0, 0.4) !important;
 }
 
 .registro-page .table-container table tbody tr:hover::before {
@@ -594,131 +764,292 @@
   padding: 0.875rem 1rem !important;
   color: var(--color-text-primary) !important;
   font-size: var(--font-size-base) !important;
-  vertical-align: middle !important; /* Centrate verticalmente */
-  text-align: center !important; /* Centrate orizzontalmente di default */
+  vertical-align: middle !important;
+  text-align: center !important;
   white-space: nowrap !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
   position: static !important;
   transition: none !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  display: table-cell !important;
+  box-sizing: border-box !important;
 }
 
-/* Dimensioni colonne ottimizzate (come Excel) */
+/* Dimensioni colonne ottimizzate e coerenti */
+/* Nota: padding, text-align, display, vertical-align sono già definiti nelle regole generali */
 .registro-page .table-container table th.col-id,
 .registro-page .table-container table td.col-id {
-  width: 10% !important;
-  min-width: 80px !important;
-  text-align: center !important;
+  width: 8% !important;
+  min-width: 75px !important;
 }
 
 .registro-page .table-container table th.col-nome,
 .registro-page .table-container table td.col-nome {
-  width: 20% !important;
-  min-width: 150px !important;
-  text-align: center !important;
-  padding-left: 1.25rem !important;
-  padding-right: 1.25rem !important;
+  width: 18% !important;
+  min-width: 140px !important;
 }
 
 .registro-page .table-container table th.col-spesa,
 .registro-page .table-container table td.col-spesa {
-  width: 14% !important;
-  min-width: 120px !important;
-  text-align: right !important; /* Numeri allineati a destra */
-  padding-right: 2.5rem !important; /* Aumentato padding destro per più spazio */
+  width: 11% !important;
+  min-width: 100px !important;
 }
 
 .registro-page .table-container table th.col-deal,
 .registro-page .table-container table td.col-deal {
-  width: 16% !important;
-  min-width: 140px !important;
-  text-align: center !important;
-  padding-left: 2rem !important; /* Aumentato padding sinistro per più spazio tra colonne */
+  width: 12% !important;
+  min-width: 110px !important;
 }
 
 .registro-page .table-container table th.col-referral,
 .registro-page .table-container table td.col-referral {
-  width: 20% !important;
-  min-width: 150px !important;
-  text-align: center !important;
-  padding-left: 1.25rem !important;
-  padding-right: 1.25rem !important;
+  width: 18% !important;
+  min-width: 140px !important;
+}
+
+.registro-page .table-container table th.col-referiti,
+.registro-page .table-container table td.col-referiti {
+  width: 9% !important;
+  min-width: 85px !important;
 }
 
 .registro-page .table-container table th.col-attivo,
 .registro-page .table-container table td.col-attivo {
-  width: 10% !important;
-  min-width: 100px !important;
-  text-align: center !important;
+  width: 9% !important;
+  min-width: 85px !important;
 }
 
 .registro-page .table-container table th.col-azioni,
 .registro-page .table-container table td.col-azioni {
-  width: 10% !important;
-  min-width: 120px !important;
-  text-align: center !important;
+  width: 8% !important;
+  min-width: 90px !important;
 }
 
-/* Assicura che il contenuto interno delle celle centrate sia centrato */
+/* Badge per i referral nella colonna Referral e per i nomi clienti */
+.referral-badge,
+.customer-name-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid;
+}
+
+/* Manager Referral Modal */
+.referral-manager-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.referral-manager-body {
+  overflow-y: auto;
+}
+
+.referral-form-container {
+  background: var(--glass-bg-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4);
+}
+
+.referral-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.referral-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.referral-form .form-group label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.referral-color-selector-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.referral-color-btn-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  padding: 0;
+  background: none;
+}
+
+.referral-color-btn-inline:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.referral-color-btn-inline.active {
+  transform: scale(1.2);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.referral-color-btn-inline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.referral-form .form-actions {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+.referral-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.referral-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--glass-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3) var(--spacing-4);
+  transition: all var(--transition-base);
+}
+
+.referral-item:hover {
+  background: var(--glass-bg-light);
+  border-color: rgba(230, 194, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.referral-item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.referral-badge-preview {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-3);
+  border: 1px solid;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.referral-item-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.referral-item-actions {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.referral-item-actions .btn-icon {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-base);
+}
+
+.referral-item-actions .btn-icon:hover {
+  background: var(--glass-bg-light);
+  border-color: rgba(230, 194, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Stili specifici per contenuti interni delle celle */
+/* Nota: le celle stesse hanno già padding, display, vertical-align, text-align dalla regola generale */
+
 .registro-page .table-container table td.col-azioni .action-buttons {
-  display: flex !important;
+  display: inline-flex !important;
   justify-content: center !important;
   align-items: center !important;
-  margin: 0 auto !important;
-  width: fit-content !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
   gap: 0.5rem !important;
 }
 
-.registro-page .table-container table td.col-attivo {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-.registro-page .table-container table td.col-attivo .table-toggle-switch {
+.registro-page .table-container table td.col-attivo label.table-toggle-switch {
   margin: 0 !important;
+  padding: 0 !important;
+  display: inline-block !important;
 }
 
-.registro-page .table-container table td.col-nome,
-.registro-page .table-container table td.col-referral {
+.registro-page .table-container table td.col-attivo .inline-spinner {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: var(--spacing-2) !important;
+  padding: 0 !important;
+}
+
+/* Stili per colonne ordinabili */
+.registro-page .table-container table th.sortable {
+  cursor: pointer !important;
+  user-select: none !important;
+  position: relative !important;
+  transition: all var(--transition-base) !important;
   text-align: center !important;
 }
 
-/* Assicura che il contenuto delle celle sia ben centrato */
-.registro-page .table-container table td.col-id,
-.registro-page .table-container table td.col-nome,
-.registro-page .table-container table td.col-referral,
-.registro-page .table-container table td.col-deal,
-.registro-page .table-container table td.col-attivo,
-.registro-page .table-container table td.col-azioni {
-  display: table-cell !important;
-  vertical-align: middle !important;
+.registro-page .table-container table th.sortable:hover {
+  background: rgba(230, 194, 0, 0.08) !important;
+  color: var(--color-primary) !important;
 }
+
+.registro-page .table-container table th.sortable.sorted {
+  color: var(--color-primary) !important;
+  background: rgba(230, 194, 0, 0.05) !important;
+}
+
+.registro-page .table-container table th.sortable {
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all var(--transition-base) !important;
+}
+
 
 
 
 /* === MODALS === */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-index-modal);
-  padding: var(--spacing-4);
-  animation: fadeIn 0.3s ease-out;
-}
-
-.modal-overlay::before {
-  display: none; /* Rimuove i gradient glow che distraggono */
-}
+/* Gli stili per .modal-overlay sono ora gestiti nel componente Modal.css */
+/* Rimossi per evitare conflitti con il backdrop separato */
 
 @keyframes fadeIn {
   from {
@@ -908,12 +1239,12 @@
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: var(--spacing-4) var(--spacing-5);
+  padding: var(--spacing-4) calc(var(--spacing-5) + 1.5rem) var(--spacing-4) var(--spacing-5);
   border: 1px solid var(--color-border-dark);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: inherit;
-  transition: all var(--transition-luxury);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--glass-bg-light);
   color: var(--color-text-primary);
   box-shadow: 
@@ -921,6 +1252,17 @@
     0 1px 0 rgba(255, 255, 255, 0.02);
   will-change: border-color, box-shadow, transform;
   position: relative;
+}
+
+.form-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-4) center;
+  background-size: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
 }
 
 .form-group input::placeholder,
@@ -948,6 +1290,31 @@
     inset 0 1px 0 rgba(230, 194, 0, 0.05);
   background: var(--glass-bg);
   transform: scale(1.01);
+}
+
+.form-group select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-4) center;
+  background-size: 12px;
+}
+
+.form-group select:hover {
+  border-color: rgba(230, 194, 0, 0.4);
+  background-color: var(--glass-bg);
+  transform: translateY(-1px);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(230, 194, 0, 0.1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6C200' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-4) center;
+  background-size: 12px;
+}
+
+.form-group select:active {
+  transform: scale(0.99);
 }
 
 .form-group input:disabled,
@@ -1059,7 +1426,9 @@
   width: 51px;
   height: 31px;
   cursor: pointer;
-  margin: 0 auto;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
 }
 
 .table-toggle-switch input {
@@ -1147,27 +1516,47 @@
   width: 29px;
 }
 
+.table-toggle-switch input:disabled + .table-toggle-slider {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.table-toggle-switch input:disabled {
+  cursor: not-allowed !important;
+}
+
 /* === ACTION BUTTONS WITH ICONS === */
 .action-buttons {
-  display: flex;
-  gap: var(--spacing-2);
-  align-items: center;
+  display: inline-flex !important;
+  gap: 0.5rem !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  width: auto !important;
 }
 
 .action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2) var(--spacing-3);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  transition: all var(--transition-luxury);
-  background: transparent;
-  color: var(--color-text-secondary);
-  min-width: 36px;
-  height: 36px;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.5rem !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  cursor: pointer !important;
+  font-size: var(--font-size-base) !important;
+  transition: all var(--transition-luxury) !important;
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
 }
 
 .action-btn:hover {
@@ -1195,8 +1584,13 @@
 }
 
 .action-btn-icon {
-  font-size: 16px;
-  line-height: 1;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
 }
 
 /* === RESPONSIVE === */

@@ -1,0 +1,134 @@
+/* Manager Referral Styles */
+.referral-section {
+  margin-bottom: var(--spacing-8);
+}
+
+.referral-section-title {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.referral-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.referral-card {
+  background: var(--glass-bg-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.referral-card:hover {
+  background: var(--glass-bg);
+  border-color: rgba(230, 194, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.referral-card-header {
+  margin-bottom: var(--spacing-3);
+}
+
+.referral-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.referral-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.referral-checkbox-label {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.referral-card-body {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.referral-color-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.referral-color-selector label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.referral-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.referral-color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  padding: 0;
+  background: none;
+}
+
+.referral-color-btn:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.referral-color-btn.active {
+  transform: scale(1.2);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.referral-color-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.referral-saving {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2);
+  margin-top: var(--spacing-2);
+}
+
+.referral-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  padding: var(--spacing-6);
+}
+

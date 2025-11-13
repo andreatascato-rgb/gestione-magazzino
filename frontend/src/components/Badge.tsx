@@ -9,6 +9,9 @@ export interface BadgeProps {
   variant?: BadgeVariant;
   size?: BadgeSize;
   className?: string;
+  title?: string;
+  onClick?: (e: React.MouseEvent<HTMLSpanElement>) => void;
+  style?: React.CSSProperties;
 }
 
 const Badge: React.FC<BadgeProps> = ({
@@ -16,6 +19,9 @@ const Badge: React.FC<BadgeProps> = ({
   variant = 'neutral',
   size = 'md',
   className = '',
+  title,
+  onClick,
+  style,
 }) => {
   const baseClass = 'badge';
   const variantClass = `badge-${variant}`;
@@ -24,7 +30,16 @@ const Badge: React.FC<BadgeProps> = ({
     .filter(Boolean)
     .join(' ');
 
-  return <span className={classes}>{children}</span>;
+  return (
+    <span 
+      className={classes}
+      title={title}
+      onClick={onClick}
+      style={style}
+    >
+      {children}
+    </span>
+  );
 };
 
 export default Badge;

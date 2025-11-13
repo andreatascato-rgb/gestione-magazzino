@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Product } from '../types';
+import { useToast, ConfirmDialog } from '../components';
 
 function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', sku: '', price: '0' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; productId: string | null }>({
+    isOpen: false,
+    productId: null,
+  });
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadProducts();
@@ -18,7 +25,7 @@ function Products() {
       setProducts(response.data);
     } catch (error) {
       console.error('Error loading products:', error);
-      alert('Errore nel caricamento dei prodotti');
+      showToast('Errore nel caricamento dei prodotti', 'error');
     }
   };
 
@@ -30,13 +37,18 @@ function Products() {
       } else {
         await api.post('/products', formData);
       }
+      const wasEditing = !!editing;
       setShowModal(false);
       setEditing(null);
       setFormData({ name: '', description: '', sku: '', price: '0' });
+      showToast(
+        wasEditing ? 'Prodotto modificato con successo' : 'Prodotto creato con successo',
+        'success'
+      );
       loadProducts();
     } catch (error: any) {
       console.error('Error saving product:', error);
-      alert(error.response?.data?.error || 'Errore nel salvataggio del prodotto');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio del prodotto', 'error');
     }
   };
 
@@ -51,14 +63,21 @@ function Products() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questo prodotto?')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, productId: id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.productId) return;
     try {
-      await api.delete(`/products/${id}`);
+      await api.delete(`/products/${deleteConfirm.productId}`);
+      showToast('Prodotto eliminato con successo', 'success');
+      setDeleteConfirm({ isOpen: false, productId: null });
       loadProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Errore nell\'eliminazione del prodotto');
+      showToast('Errore nell\'eliminazione del prodotto', 'error');
+      setDeleteConfirm({ isOpen: false, productId: null });
     }
   };
 
@@ -113,7 +132,7 @@ function Products() {
                   <button className="btn btn-secondary" onClick={() => handleEdit(product)}>
                     Modifica
                   </button>
-                  <button className="btn btn-danger" onClick={() => handleDelete(product.id)}>
+                  <button className="btn btn-danger" onClick={() => handleDeleteClick(product.id)}>
                     Elimina
                   </button>
                 </td>
@@ -176,6 +195,17 @@ function Products() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, productId: null })}
+        onConfirm={handleDeleteConfirm}
+        title="Elimina Prodotto"
+        message="Sei sicuro di voler eliminare questo prodotto? Questa azione non può essere annullata."
+        confirmText="Elimina"
+        cancelText="Annulla"
+        variant="danger"
+      />
     </div>
   );
 }

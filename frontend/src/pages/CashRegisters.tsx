@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { CashRegister } from '../types';
+import { useToast, ConfirmDialog } from '../components';
 
 function CashRegisters() {
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<CashRegister | null>(null);
   const [formData, setFormData] = useState({ name: '', initialBalance: '0' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; cashRegisterId: string | null }>({
+    isOpen: false,
+    cashRegisterId: null,
+  });
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadCashRegisters();
@@ -18,7 +25,7 @@ function CashRegisters() {
       setCashRegisters(response.data);
     } catch (error) {
       console.error('Error loading cash registers:', error);
-      alert('Errore nel caricamento delle casse');
+      showToast('Errore nel caricamento delle casse', 'error');
     }
   };
 
@@ -30,13 +37,18 @@ function CashRegisters() {
       } else {
         await api.post('/cash-registers', formData);
       }
+      const wasEditing = !!editing;
       setShowModal(false);
       setEditing(null);
       setFormData({ name: '', initialBalance: '0' });
+      showToast(
+        wasEditing ? 'Cassa modificata con successo' : 'Cassa creata con successo',
+        'success'
+      );
       loadCashRegisters();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving cash register:', error);
-      alert('Errore nel salvataggio della cassa');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio della cassa', 'error');
     }
   };
 
@@ -49,14 +61,21 @@ function CashRegisters() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questa cassa?')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, cashRegisterId: id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.cashRegisterId) return;
     try {
-      await api.delete(`/cash-registers/${id}`);
+      await api.delete(`/cash-registers/${deleteConfirm.cashRegisterId}`);
+      showToast('Cassa eliminata con successo', 'success');
+      setDeleteConfirm({ isOpen: false, cashRegisterId: null });
       loadCashRegisters();
     } catch (error) {
       console.error('Error deleting cash register:', error);
-      alert('Errore nell\'eliminazione della cassa');
+      showToast('Errore nell\'eliminazione della cassa', 'error');
+      setDeleteConfirm({ isOpen: false, cashRegisterId: null });
     }
   };
 
@@ -95,7 +114,7 @@ function CashRegisters() {
                   <button className="btn btn-secondary" onClick={() => handleEdit(cashRegister)}>
                     Modifica
                   </button>
-                  <button className="btn btn-danger" onClick={() => handleDelete(cashRegister.id)}>
+                  <button className="btn btn-danger" onClick={() => handleDeleteClick(cashRegister.id)}>
                     Elimina
                   </button>
                 </td>
@@ -145,6 +164,17 @@ function CashRegisters() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, cashRegisterId: null })}
+        onConfirm={handleDeleteConfirm}
+        title="Elimina Cassa"
+        message="Sei sicuro di voler eliminare questa cassa? Questa azione non può essere annullata."
+        confirmText="Elimina"
+        cancelText="Annulla"
+        variant="danger"
+      />
     </div>
   );
 }

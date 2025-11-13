@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { StockMovement, CashMovement, Product, Warehouse, CashRegister, MovementType } from '../types';
+import { useToast } from '../components';
 
 function Movements() {
   const [activeTab, setActiveTab] = useState<'stock' | 'cash'>('stock');
@@ -31,6 +32,8 @@ function Movements() {
     date: new Date().toISOString().split('T')[0],
   });
 
+  const { showToast } = useToast();
+
   useEffect(() => {
     loadData();
   }, []);
@@ -57,7 +60,7 @@ function Movements() {
       setCashRegisters(cashRegistersRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      alert('Errore nel caricamento dei dati');
+      showToast('Errore nel caricamento dei dati', 'error');
     }
   };
 
@@ -74,10 +77,11 @@ function Movements() {
         reason: '',
         date: new Date().toISOString().split('T')[0],
       });
+      showToast('Movimentazione merce creata con successo', 'success');
       loadData();
     } catch (error: any) {
       console.error('Error saving movement:', error);
-      alert(error.response?.data?.error || 'Errore nel salvataggio della movimentazione');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio della movimentazione', 'error');
     }
   };
 
@@ -93,10 +97,11 @@ function Movements() {
         description: '',
         date: new Date().toISOString().split('T')[0],
       });
+      showToast('Movimentazione denaro creata con successo', 'success');
       loadData();
     } catch (error: any) {
       console.error('Error saving movement:', error);
-      alert(error.response?.data?.error || 'Errore nel salvataggio della movimentazione');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio della movimentazione', 'error');
     }
   };
 

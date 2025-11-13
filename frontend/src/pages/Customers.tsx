@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import { Customer } from '../types';
+import { useToast, ConfirmDialog, LoadingSpinner, Badge, Dropdown } from '../components';
+import type { DropdownOption } from '../components';
 
 function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -15,12 +17,82 @@ function Customers() {
   const [searchName, setSearchName] = useState('');
   const [filterAttivo, setFilterAttivo] = useState<'all' | 'attivo' | 'inattivo'>('all');
   const [filterReferral, setFilterReferral] = useState<string>('all');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; customerId: string | null }>({
+    isOpen: false,
+    customerId: null,
+  });
+
+  // Stato per ordinamento
+  type SortColumn = 'name' | 'spesa' | 'ultimoDeal' | 'referredByCount' | 'createdAt' | null;
+  type SortDirection = 'asc' | 'desc';
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Stati di loading
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isToggling, setIsToggling] = useState<string | null>(null);
+
+  // Stati per Manager Referral
+  const [showReferralManager, setShowReferralManager] = useState(false);
+  const [showReferralForm, setShowReferralForm] = useState(false);
+  const [referralFormData, setReferralFormData] = useState({ 
+    customerId: '', 
+    color: '' 
+  });
+  const [editingReferral, setEditingReferral] = useState<Customer | null>(null);
+  const [isSavingReferral, setIsSavingReferral] = useState(false);
+  const [deleteReferralConfirm, setDeleteReferralConfirm] = useState<{ isOpen: boolean; customerId: string | null }>({
+    isOpen: false,
+    customerId: null,
+  });
+
+  const { showToast } = useToast();
+
+  // Colori standard per i referral
+  const REFERRAL_COLORS = [
+    { name: 'Blu', value: '#0284c7' },
+    { name: 'Verde', value: '#16a34a' },
+    { name: 'Viola', value: '#8b5cf6' },
+    { name: 'Rosa', value: '#ec4899' },
+    { name: 'Arancione', value: '#f97316' },
+    { name: 'Ciano', value: '#0891b2' },
+    { name: 'Indaco', value: '#4f46e5' },
+    { name: 'Emeraldo', value: '#10b981' },
+    { name: 'Rosso', value: '#ef4444' },
+    { name: 'Giallo', value: '#eab308' },
+  ];
+
+  // Helper per convertire hex in rgba
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  // Helper per ottenere lo stile del badge referral
+  const getReferralBadgeStyle = (color: string) => {
+    const bgStart = hexToRgba(color, 0.15);
+    const bgEnd = hexToRgba(color, 0.08);
+    const border = hexToRgba(color, 0.4);
+    const shadow = hexToRgba(color, 0.25);
+    
+    return {
+      background: `linear-gradient(135deg, ${bgStart} 0%, ${bgEnd} 100%)`,
+      borderColor: border,
+      color: color,
+      boxShadow: `0 2px 8px ${shadow}`,
+    };
+  };
 
   useEffect(() => {
     loadCustomers();
   }, []);
 
   const loadCustomers = async () => {
+    setLoading(true);
     try {
       const response = await api.get('/customers');
       console.log('Customers data received:', response.data);
@@ -32,7 +104,10 @@ function Customers() {
         ultimoDeal: customer.ultimoDeal || undefined,
         referralId: customer.referralId || undefined,
         referral: customer.referral || undefined,
+        referredByCount: customer.referredByCount || 0,
         attivo: customer.attivo !== undefined ? customer.attivo : true,
+        isReferral: customer.isReferral || false,
+        referralColor: customer.referralColor || undefined,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       }));
@@ -40,12 +115,15 @@ function Customers() {
       setCustomers(formattedCustomers);
     } catch (error) {
       console.error('Error loading customers:', error);
-      alert('Errore nel caricamento dei clienti');
+      showToast('Errore nel caricamento dei clienti', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       if (editing) {
         // Per modifica: spesa e ultimoDeal non vengono inviati (vengono calcolati automaticamente dal backend)
@@ -66,13 +144,23 @@ function Customers() {
         };
         await api.post('/customers', submitData);
       }
+      const wasEditing = !!editing;
       setShowModal(false);
       setEditing(null);
       setFormData({ name: '', referralId: '' });
-      loadCustomers();
+      showToast(
+        wasEditing ? 'Cliente modificato con successo' : 'Cliente creato con successo',
+        'success'
+      );
+      await loadCustomers();
     } catch (error: any) {
       console.error('Error saving customer:', error);
-      alert(error.response?.data?.error || 'Errore nel salvataggio del cliente');
+      showToast(
+        error.response?.data?.error || 'Errore nel salvataggio del cliente',
+        'error'
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -85,18 +173,29 @@ function Customers() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questo cliente?')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, customerId: id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.customerId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/customers/${id}`);
-      loadCustomers();
+      await api.delete(`/customers/${deleteConfirm.customerId}`);
+      showToast('Cliente eliminato con successo', 'success');
+      setDeleteConfirm({ isOpen: false, customerId: null });
+      await loadCustomers();
     } catch (error) {
       console.error('Error deleting customer:', error);
-      alert('Errore nell\'eliminazione del cliente');
+      showToast('Errore nell\'eliminazione del cliente', 'error');
+      setDeleteConfirm({ isOpen: false, customerId: null });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleToggleAttivo = async (id: string, attivo: boolean) => {
+    setIsToggling(id);
     try {
       const customer = customers.find(c => c.id === id);
       if (!customer) return;
@@ -108,12 +207,21 @@ function Customers() {
         attivo: attivo,
         // spesa e ultimoDeal non vengono inviati - il backend li manterrà invariati
       });
-      loadCustomers();
+      showToast(
+        attivo ? 'Cliente attivato con successo' : 'Cliente disattivato con successo',
+        'success'
+      );
+      await loadCustomers();
     } catch (error: any) {
       console.error('Error toggling attivo:', error);
-      alert(error.response?.data?.error || 'Errore nell\'aggiornamento dello stato');
+      showToast(
+        error.response?.data?.error || 'Errore nell\'aggiornamento dello stato',
+        'error'
+      );
       // Ripristina lo stato precedente in caso di errore
-      loadCustomers();
+      await loadCustomers();
+    } finally {
+      setIsToggling(null);
     }
   };
 
@@ -156,9 +264,152 @@ function Customers() {
     return Array.from(referralMap.values());
   }, [customers]);
 
-  // Funzione di filtraggio (solo filtri base)
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(customer => {
+  // Opzioni per il dropdown Stato
+  const statoOptions: DropdownOption[] = [
+    { value: 'all', label: 'Tutti' },
+    { value: 'attivo', label: 'Solo Attivi' },
+    { value: 'inattivo', label: 'Solo Inattivi' },
+  ];
+
+  // Opzioni per il dropdown Referral (filtro)
+  const referralOptions: DropdownOption[] = useMemo(() => {
+    const options: DropdownOption[] = [{ value: 'all', label: 'Tutti' }];
+    allReferrals.forEach((referral) => {
+      options.push({
+        value: referral.id,
+        label: referral.name,
+      });
+    });
+    return options;
+  }, [allReferrals]);
+
+  // Opzioni per il dropdown Referral (form)
+  const formReferralOptions: DropdownOption[] = useMemo(() => {
+    const options: DropdownOption[] = [{ value: '', label: 'Nessuno' }];
+    availableReferrals.forEach((customer) => {
+      options.push({
+        value: customer.id,
+        label: customer.name,
+      });
+    });
+    // Se stiamo modificando un cliente e ha un referral che non è nella lista (perché escluso),
+    // aggiungiamolo comunque alle opzioni per poterlo visualizzare
+    if (editing && editing.referralId && editing.referral) {
+      const referralExists = options.some(opt => opt.value === editing.referralId);
+      if (!referralExists) {
+        options.push({
+          value: editing.referralId,
+          label: editing.referral.name,
+        });
+      }
+    }
+    return options;
+  }, [availableReferrals, editing]);
+
+  // Lista dei clienti disponibili per diventare referral (escludendo quelli già referral)
+  const customersForReferral: DropdownOption[] = useMemo(() => {
+    return customers
+      .filter(c => !c.isReferral)
+      .map(c => ({
+        value: c.id,
+        label: c.name,
+      }));
+  }, [customers]);
+
+  // Lista dei referral esistenti
+  const existingReferrals = useMemo(() => {
+    return customers.filter(c => c.isReferral);
+  }, [customers]);
+
+  // Gestione Referral Manager
+  const handleReferralSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!referralFormData.customerId || !referralFormData.color) {
+      showToast('Seleziona un cliente e un colore', 'error');
+      return;
+    }
+
+    setIsSavingReferral(true);
+    try {
+      await api.put(`/customers/${referralFormData.customerId}/referral`, {
+        isReferral: true,
+        referralColor: referralFormData.color,
+      });
+      showToast(editingReferral ? 'Referral modificato con successo' : 'Referral creato con successo', 'success');
+      setShowReferralForm(false);
+      setReferralFormData({ customerId: '', color: REFERRAL_COLORS[0].value });
+      setEditingReferral(null);
+      await loadCustomers();
+    } catch (error: any) {
+      console.error('Error saving referral:', error);
+      showToast(error.response?.data?.error || 'Errore nel salvataggio del referral', 'error');
+    } finally {
+      setIsSavingReferral(false);
+    }
+  };
+
+  const handleEditReferral = (referral: Customer) => {
+    setEditingReferral(referral);
+    setReferralFormData({
+      customerId: referral.id,
+      color: referral.referralColor || REFERRAL_COLORS[0].value,
+    });
+    setShowReferralForm(true);
+  };
+
+  const handleDeleteReferralConfirm = async () => {
+    if (!deleteReferralConfirm.customerId) return;
+    try {
+      await api.put(`/customers/${deleteReferralConfirm.customerId}/referral`, {
+        isReferral: false,
+        referralColor: null,
+      });
+      showToast('Referral eliminato con successo', 'success');
+      setDeleteReferralConfirm({ isOpen: false, customerId: null });
+      await loadCustomers();
+    } catch (error: any) {
+      console.error('Error deleting referral:', error);
+      showToast(error.response?.data?.error || 'Errore nell\'eliminazione del referral', 'error');
+      setDeleteReferralConfirm({ isOpen: false, customerId: null });
+    }
+  };
+
+  const openNewReferralForm = () => {
+    setEditingReferral(null);
+    setReferralFormData({ customerId: '', color: REFERRAL_COLORS[0].value });
+    setShowReferralForm(true);
+  };
+
+  const openReferralManager = () => {
+    setShowReferralManager(true);
+    setShowReferralForm(false);
+    setEditingReferral(null);
+    setReferralFormData({ customerId: '', color: REFERRAL_COLORS[0].value });
+  };
+
+  const closeReferralManager = () => {
+    setShowReferralManager(false);
+    setShowReferralForm(false);
+    setEditingReferral(null);
+    setReferralFormData({ customerId: '', color: REFERRAL_COLORS[0].value });
+  };
+
+  // Funzione per gestire il click sulle intestazioni delle colonne
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Se clicco sulla stessa colonna, cambio direzione
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Se clicco su una colonna diversa, imposto quella come colonna di ordinamento
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Funzione di filtraggio e ordinamento
+  const filteredAndSortedCustomers = useMemo(() => {
+    // Prima filtro
+    let filtered = customers.filter(customer => {
       // Filtro per nome (case-insensitive, ricerca parziale)
       if (searchName.trim()) {
         const searchLower = searchName.toLowerCase().trim();
@@ -186,7 +437,50 @@ function Customers() {
 
       return true;
     });
-  }, [customers, searchName, filterAttivo, filterReferral]);
+
+    // Poi ordino
+    if (sortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortColumn) {
+          case 'name':
+            aValue = a.name.toLowerCase();
+            bValue = b.name.toLowerCase();
+            break;
+          case 'spesa':
+            aValue = a.spesa || 0;
+            bValue = b.spesa || 0;
+            break;
+          case 'ultimoDeal':
+            aValue = a.ultimoDeal ? new Date(a.ultimoDeal).getTime() : 0;
+            bValue = b.ultimoDeal ? new Date(b.ultimoDeal).getTime() : 0;
+            break;
+          case 'referredByCount':
+            aValue = a.referredByCount || 0;
+            bValue = b.referredByCount || 0;
+            break;
+          case 'createdAt':
+            aValue = new Date(a.createdAt).getTime();
+            bValue = new Date(b.createdAt).getTime();
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) {
+          return sortDirection === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [customers, searchName, filterAttivo, filterReferral, sortColumn, sortDirection]);
 
   // Funzioni handler per i filtri
   const handleResetFilters = () => {
@@ -200,6 +494,25 @@ function Customers() {
       filterAttivo !== 'all' ||
       filterReferral !== 'all';
   }, [searchName, filterAttivo, filterReferral]);
+
+  // Mostra loading spinner durante caricamento iniziale
+  if (loading) {
+    return (
+      <div className="registro-page">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '400px',
+          flexDirection: 'column',
+          gap: 'var(--spacing-4)'
+        }}>
+          <LoadingSpinner size="lg" />
+          <p style={{ color: 'var(--color-text-secondary)' }}>Caricamento clienti...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="registro-page">
@@ -215,13 +528,23 @@ function Customers() {
             <h2>Clienti</h2>
             <span className="page-header-badge">Anagrafica</span>
           </div>
-          <p className="page-header-description">
-            Gestione anagrafica clienti. Le interazioni con i prodotti sono gestite nella sezione Movimenti.
-          </p>
         </div>
-        <button className="btn btn-primary" onClick={openNewModal}>
-          Nuovo Cliente
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+          <button 
+            className="btn btn-referral" 
+            onClick={openReferralManager}
+            disabled={loading}
+          >
+            Referral
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={openNewModal}
+            disabled={loading}
+          >
+            Nuovo Cliente
+          </button>
+        </div>
       </div>
 
       {/* Pannello Filtri */}
@@ -240,29 +563,24 @@ function Customers() {
           <div className="filters-actions">
             <div className="filter-group-inline">
               <label>Stato</label>
-              <select
+              <Dropdown
                 value={filterAttivo}
-                onChange={(e) => setFilterAttivo(e.target.value as 'all' | 'attivo' | 'inattivo')}
-              >
-                <option value="all">Tutti</option>
-                <option value="attivo">Solo Attivi</option>
-                <option value="inattivo">Solo Inattivi</option>
-              </select>
+                onChange={(value) => setFilterAttivo(value as 'all' | 'attivo' | 'inattivo')}
+                options={statoOptions}
+                placeholder="Seleziona stato"
+              />
             </div>
 
             <div className="filter-group-inline">
               <label>Referral</label>
-              <select
+              <Dropdown
                 value={filterReferral}
-                onChange={(e) => setFilterReferral(e.target.value)}
-              >
-                <option value="all">Tutti</option>
-                {allReferrals.map((referral) => (
-                  <option key={referral.id} value={referral.id}>
-                    {referral.id} - {referral.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setFilterReferral(value)}
+                options={referralOptions}
+                placeholder="Seleziona referral"
+                searchable={true}
+                searchPlaceholder="Cerca referral..."
+              />
             </div>
 
             {hasActiveFilters && (
@@ -280,7 +598,7 @@ function Customers() {
         <div className="filter-results-count">
           {hasActiveFilters ? (
             <span>
-              <strong>{filteredCustomers.length}</strong> {filteredCustomers.length === 1 ? 'cliente trovato' : 'clienti trovati'} 
+              <strong>{filteredAndSortedCustomers.length}</strong> {filteredAndSortedCustomers.length === 1 ? 'cliente trovato' : 'clienti trovati'} 
               {' '}su {customers.length} totali
             </span>
           ) : (
@@ -295,36 +613,125 @@ function Customers() {
         <table>
           <thead>
             <tr>
-              <th className="col-id">ID</th>
-              <th className="col-nome">Nome</th>
-              <th className="col-spesa">Spesa</th>
-              <th className="col-deal">Ultimo Deal</th>
-              <th className="col-referral">Referral</th>
-              <th className="col-attivo">Attivo</th>
-              <th className="col-azioni">Azioni</th>
+              <th className="col-id" title="Identificativo univoco del cliente">ID</th>
+              <th 
+                className={`col-nome sortable ${sortColumn === 'name' ? 'sorted' : ''}`}
+                onClick={() => handleSort('name')}
+                title="Clicca per ordinare per nome del cliente"
+              >
+                Nome
+              </th>
+              <th 
+                className={`col-spesa sortable ${sortColumn === 'spesa' ? 'sorted' : ''}`}
+                onClick={() => handleSort('spesa')}
+                title="Clicca per ordinare per spesa totale del cliente"
+              >
+                Spesa
+              </th>
+              <th 
+                className={`col-deal sortable ${sortColumn === 'ultimoDeal' ? 'sorted' : ''}`}
+                onClick={() => handleSort('ultimoDeal')}
+                title="Clicca per ordinare per data ultimo deal del cliente"
+              >
+                Ultimo Deal
+              </th>
+              <th className="col-referral" title="Cliente che ha referito questo cliente">Referral</th>
+              <th 
+                className={`col-referiti sortable ${sortColumn === 'referredByCount' ? 'sorted' : ''}`}
+                onClick={() => handleSort('referredByCount')}
+                title="Clicca per ordinare per numero di clienti referiti"
+              >
+                Referenti
+              </th>
+              <th className="col-attivo" title="Stato attivo/inattivo del cliente">Attivo</th>
+              <th className="col-azioni" title="Azioni disponibili: modifica o elimina cliente">Azioni</th>
             </tr>
           </thead>
           <tbody>
             {customers.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
                   Nessun cliente trovato
                 </td>
               </tr>
-            ) : filteredCustomers.length === 0 ? (
+            ) : filteredAndSortedCustomers.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
                   Nessun risultato per i filtri selezionati
                 </td>
               </tr>
             ) : (
-              filteredCustomers.map((customer) => (
+              filteredAndSortedCustomers.map((customer) => {
+                // Trova il referral completo nella lista per ottenere isReferral e referralColor
+                const referralCustomer = customer.referralId 
+                  ? customers.find(c => c.id === customer.referralId)
+                  : null;
+                
+                return (
                 <tr key={customer.id}>
-                  <td className="col-id">{customer.id}</td>
-                  <td className="col-nome">{customer.name}</td>
-                  <td className="col-spesa">{formatCurrency(customer.spesa || 0)}</td>
-                  <td className="col-deal">{formatDate(customer.ultimoDeal)}</td>
-                  <td className="col-referral">{customer.referral?.name || '-'}</td>
+                  <td className="col-id" title={`ID Cliente: ${customer.id}`}>{customer.id}</td>
+                  <td className="col-nome">
+                    {customer.isReferral && customer.referralColor ? (
+                      <span 
+                        className="referral-badge customer-name-badge"
+                        style={getReferralBadgeStyle(customer.referralColor)}
+                      >
+                        {customer.name.toUpperCase()}
+                      </span>
+                    ) : (
+                      <span 
+                        className="customer-name-badge"
+                        style={getReferralBadgeStyle('#ffffff')}
+                      >
+                        {customer.name.toUpperCase()}
+                      </span>
+                    )}
+                  </td>
+                  <td 
+                    className="col-spesa" 
+                    title={`Spesa totale: ${formatCurrency(customer.spesa || 0)}`}
+                  >
+                    {formatCurrency(customer.spesa || 0)}
+                  </td>
+                  <td 
+                    className="col-deal" 
+                    title={customer.ultimoDeal ? `Ultimo deal: ${formatDate(customer.ultimoDeal)}` : 'Nessun deal registrato'}
+                  >
+                    {formatDate(customer.ultimoDeal)}
+                  </td>
+                  <td className="col-referral">
+                    {customer.referral ? (
+                      referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
+                        <span 
+                          className="referral-badge"
+                          style={getReferralBadgeStyle(referralCustomer.referralColor)}
+                        >
+                          {customer.referral.name.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span 
+                          className="referral-badge"
+                          style={getReferralBadgeStyle('#0284c7')}
+                        >
+                          {customer.referral.name.toUpperCase()}
+                        </span>
+                      )
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td 
+                    className="col-referiti"
+                    title={customer.referredByCount && customer.referredByCount > 0 ? `${customer.referredByCount} ${customer.referredByCount === 1 ? 'cliente referito' : 'clienti referiti'}` : 'Nessun cliente referito'}
+                  >
+                    {customer.referredByCount && customer.referredByCount > 0 ? (
+                      <Badge variant="primary" size="sm">
+                        {customer.referredByCount}
+                      </Badge>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
                   <td className="col-attivo">
                     <label className="table-toggle-switch">
                       <input
@@ -332,43 +739,58 @@ function Customers() {
                         checked={customer.attivo}
                         onChange={(e) => handleToggleAttivo(customer.id, e.target.checked)}
                         onClick={(e) => e.stopPropagation()}
+                        disabled={isToggling === customer.id || loading}
                       />
                       <span className="table-toggle-slider"></span>
                     </label>
+                    {isToggling === customer.id && (
+                      <LoadingSpinner size="sm" className="inline-spinner" />
+                    )}
                   </td>
                   <td className="col-azioni">
                     <div className="action-buttons">
                       <button 
                         className="action-btn edit" 
                         onClick={() => handleEdit(customer)}
-                        title="Modifica"
+                        title="Modifica cliente"
                         type="button"
+                        disabled={loading || isSaving || isDeleting}
                       >
                         <span className="action-btn-icon">✏️</span>
                       </button>
                       <button 
                         className="action-btn delete" 
-                        onClick={() => handleDelete(customer.id)}
-                        title="Elimina"
+                        onClick={() => handleDeleteClick(customer.id)}
+                        title="Elimina cliente"
                         type="button"
+                        disabled={loading || isSaving || isDeleting}
                       >
                         <span className="action-btn-icon">🗑️</span>
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <>
+          <div className="dropdown-backdrop" onClick={() => !isSaving && setShowModal(false)} />
+          <div className="modal-overlay">
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editing ? 'Modifica Cliente' : 'Nuovo Cliente'}</h3>
-              <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowModal(false)}
+                disabled={isSaving}
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
@@ -378,34 +800,219 @@ function Customers() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  disabled={isSaving}
                 />
               </div>
               <div className="form-group">
                 <label>Referral</label>
-                <select
-                  value={formData.referralId}
-                  onChange={(e) => setFormData({ ...formData, referralId: e.target.value })}
-                >
-                  <option value="">Nessuno</option>
-                  {availableReferrals.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.id} - {customer.name}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown
+                  value={formData.referralId || ''}
+                  onChange={(value) => setFormData({ ...formData, referralId: value })}
+                  options={formReferralOptions}
+                  placeholder="Seleziona referral"
+                  disabled={isSaving}
+                  searchable={true}
+                  searchPlaceholder="Cerca referral..."
+                />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowModal(false)}
+                  disabled={isSaving}
+                >
                   Annulla
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Salva
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={isSaving}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-2)' }}
+                >
+                  {isSaving && <LoadingSpinner size="sm" />}
+                  {isSaving ? 'Salvataggio...' : 'Salva'}
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </>
       )}
+
+      {/* Modal Manager Referral */}
+      {showReferralManager && (
+        <>
+          <div className="dropdown-backdrop" onClick={closeReferralManager} />
+          <div className="modal-overlay">
+            <div className="modal referral-manager-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Manager Referral</h3>
+                <button 
+                  className="close-btn"
+                  onClick={closeReferralManager}
+                  disabled={isSavingReferral}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="modal-body referral-manager-body">
+                {/* Form Referral */}
+                {showReferralForm ? (
+                  <div className="referral-form-container">
+                    <form onSubmit={handleReferralSubmit} className="referral-form">
+                      <div className="form-group">
+                        <label>Cliente</label>
+                        <Dropdown
+                          value={referralFormData.customerId}
+                          onChange={(value) => setReferralFormData({ ...referralFormData, customerId: value })}
+                          options={editingReferral 
+                            ? [{ value: editingReferral.id, label: editingReferral.name }]
+                            : customersForReferral
+                          }
+                          placeholder="Seleziona un cliente"
+                          searchable={true}
+                          searchPlaceholder="Cerca cliente..."
+                          disabled={!!editingReferral || isSavingReferral}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Colore</label>
+                        <div className="referral-color-selector-inline">
+                          {REFERRAL_COLORS.map((color) => (
+                            <button
+                              key={color.value}
+                              type="button"
+                              className={`referral-color-btn-inline ${referralFormData.color === color.value ? 'active' : ''}`}
+                              style={{
+                                backgroundColor: color.value,
+                                boxShadow: referralFormData.color === color.value 
+                                  ? `0 0 0 3px rgba(255, 255, 255, 0.3), 0 0 0 6px ${color.value}40`
+                                  : undefined,
+                              }}
+                              onClick={() => setReferralFormData({ ...referralFormData, color: color.value })}
+                              disabled={isSavingReferral}
+                              title={color.name}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="form-actions">
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          disabled={isSavingReferral || !referralFormData.customerId || !referralFormData.color}
+                        >
+                          {isSavingReferral ? <LoadingSpinner size="sm" /> : (editingReferral ? 'Salva Modifiche' : 'Crea Referral')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowReferralForm(false);
+                            setReferralFormData({ customerId: '', color: REFERRAL_COLORS[0].value });
+                            setEditingReferral(null);
+                          }}
+                          disabled={isSavingReferral}
+                        >
+                          Annulla
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+                      <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+                        {existingReferrals.length > 0 
+                          ? `${existingReferrals.length} ${existingReferrals.length === 1 ? 'referral configurato' : 'referral configurati'}`
+                          : 'Nessun referral configurato'
+                        }
+                      </p>
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={openNewReferralForm}
+                        disabled={loading || customersForReferral.length === 0}
+                      >
+                        Nuovo Referral
+                      </button>
+                    </div>
+
+                    {/* Lista Referral Esistenti */}
+                    {existingReferrals.length > 0 ? (
+                      <div className="referral-list">
+                        {existingReferrals.map((referral) => (
+                          <div key={referral.id} className="referral-item">
+                            <div className="referral-item-info">
+                              <span 
+                                className="referral-badge-preview"
+                                style={getReferralBadgeStyle(referral.referralColor || REFERRAL_COLORS[0].value)}
+                                title={referral.name}
+                              >
+                                {referral.name.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="referral-item-actions">
+                              <button
+                                className="btn-icon"
+                                onClick={() => handleEditReferral(referral)}
+                                title="Modifica referral"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="btn-icon"
+                                onClick={() => setDeleteReferralConfirm({ isOpen: true, customerId: referral.id })}
+                                title="Elimina referral"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--color-text-tertiary)' }}>
+                        <p>Nessun referral configurato.</p>
+                        <p style={{ fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-2)' }}>
+                          {customersForReferral.length === 0 
+                            ? 'Tutti i clienti sono già referral'
+                            : 'Clicca su "Nuovo Referral" per crearne uno'
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => !isDeleting && setDeleteConfirm({ isOpen: false, customerId: null })}
+        onConfirm={handleDeleteConfirm}
+        title="Elimina Cliente"
+        message="Sei sicuro di voler eliminare questo cliente? Questa azione non può essere annullata."
+        confirmText={isDeleting ? "Eliminazione..." : "Elimina"}
+        cancelText="Annulla"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteReferralConfirm.isOpen}
+        onClose={() => setDeleteReferralConfirm({ isOpen: false, customerId: null })}
+        onConfirm={handleDeleteReferralConfirm}
+        title="Elimina Referral"
+        message={`Sei sicuro di voler rimuovere "${customers.find(c => c.id === deleteReferralConfirm.customerId)?.name}" dai referral?`}
+        confirmText="Elimina"
+        cancelText="Annulla"
+        variant="danger"
+      />
     </div>
   );
 }

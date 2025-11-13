@@ -147,12 +147,11 @@ const Sidebar: React.FC = () => {
                         }}
                       >
                         {item.submenu.map((subItem) => {
-                          const isSubActive = location.pathname === subItem.path;
                           return (
                             <Link
                               key={subItem.path}
                               to={subItem.path}
-                              className={`sidebar-nav-item sidebar-submenu-item ${isSubActive ? 'active' : ''}`}
+                              className="sidebar-nav-item sidebar-submenu-item"
                               title={subItem.label}
                               onClick={handleLinkClick}
                             >

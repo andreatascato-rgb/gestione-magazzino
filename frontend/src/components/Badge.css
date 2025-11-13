@@ -5,6 +5,12 @@
   font-weight: var(--font-weight-medium);
   border-radius: var(--radius-full);
   white-space: nowrap;
+  transition: all var(--transition-base);
+}
+
+.badge[style*="cursor: pointer"]:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
 }
 
 .badge-sm {

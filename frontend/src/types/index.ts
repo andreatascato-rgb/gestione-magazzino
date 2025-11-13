@@ -37,7 +37,10 @@ export interface Customer {
   ultimoDeal?: string;
   referralId?: string;
   referral?: Customer;
+  referredByCount?: number;
   attivo: boolean;
+  isReferral?: boolean;
+  referralColor?: string;
   createdAt: string;
   updatedAt: string;
 }

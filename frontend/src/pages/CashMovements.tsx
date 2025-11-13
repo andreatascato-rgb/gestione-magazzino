@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { CashMovement, CashRegister, MovementType } from '../types';
+import { useToast } from '../components';
 
 function CashMovements() {
   const [movements, setMovements] = useState<CashMovement[]>([]);
@@ -13,6 +14,8 @@ function CashMovements() {
     description: '',
     date: new Date().toISOString().split('T')[0],
   });
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -28,7 +31,7 @@ function CashMovements() {
       setCashRegisters(cashRegistersRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      alert('Errore nel caricamento dei dati');
+      showToast('Errore nel caricamento dei dati', 'error');
     }
   };
 
@@ -48,9 +51,10 @@ function CashMovements() {
       // Ricarica anche le casse per aggiornare i saldi
       const cashRegistersRes = await api.get('/cash-registers');
       setCashRegisters(cashRegistersRes.data);
+      showToast('Movimentazione creata con successo', 'success');
     } catch (error: any) {
       console.error('Error saving movement:', error);
-      alert(error.response?.data?.error || 'Errore nel salvataggio della movimentazione');
+      showToast(error.response?.data?.error || 'Errore nel salvataggio della movimentazione', 'error');
     }
   };
 

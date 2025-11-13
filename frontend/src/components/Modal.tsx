@@ -48,7 +48,9 @@ const Modal: React.FC<ModalProps> = ({
   const sizeClass = `modal-${size}`;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <>
+      <div className="dropdown-backdrop" onClick={onClose} />
+      <div className="modal-overlay">
       <div className={`modal ${sizeClass}`} onClick={(e) => e.stopPropagation()}>
         {(title || showCloseButton) && (
           <div className="modal-header">
@@ -68,6 +70,7 @@ const Modal: React.FC<ModalProps> = ({
         {footer && <div className="modal-footer">{footer}</div>}
       </div>
     </div>
+    </>
   );
 };
 
