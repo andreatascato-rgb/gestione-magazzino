@@ -6,7 +6,13 @@ function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    spesa: '0', 
+    ultimoDeal: '', 
+    referralId: '', 
+    attivo: true 
+  });
 
   useEffect(() => {
     loadCustomers();
@@ -15,7 +21,21 @@ function Customers() {
   const loadCustomers = async () => {
     try {
       const response = await api.get('/customers');
-      setCustomers(response.data);
+      console.log('Customers data received:', response.data);
+      // Assicurati che i dati siano nel formato corretto
+      const formattedCustomers = response.data.map((customer: any) => ({
+        id: customer.id,
+        name: customer.name,
+        spesa: typeof customer.spesa === 'number' ? customer.spesa : parseFloat(customer.spesa?.toString() || '0'),
+        ultimoDeal: customer.ultimoDeal || undefined,
+        referralId: customer.referralId || undefined,
+        referral: customer.referral || undefined,
+        attivo: customer.attivo !== undefined ? customer.attivo : true,
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      }));
+      console.log('Formatted customers:', formattedCustomers);
+      setCustomers(formattedCustomers);
     } catch (error) {
       console.error('Error loading customers:', error);
       alert('Errore nel caricamento dei clienti');
@@ -25,18 +45,26 @@ function Customers() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const submitData = {
+        name: formData.name,
+        spesa: formData.spesa,
+        ultimoDeal: formData.ultimoDeal || null,
+        referralId: formData.referralId || null,
+        attivo: formData.attivo,
+      };
+
       if (editing) {
-        await api.put(`/customers/${editing.id}`, formData);
+        await api.put(`/customers/${editing.id}`, submitData);
       } else {
-        await api.post('/customers', formData);
+        await api.post('/customers', submitData);
       }
       setShowModal(false);
       setEditing(null);
-      setFormData({ name: '', email: '', phone: '', address: '' });
+      setFormData({ name: '', spesa: '0', ultimoDeal: '', referralId: '', attivo: true });
       loadCustomers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving customer:', error);
-      alert('Errore nel salvataggio del cliente');
+      alert(error.response?.data?.error || 'Errore nel salvataggio del cliente');
     }
   };
 
@@ -44,9 +72,10 @@ function Customers() {
     setEditing(customer);
     setFormData({
       name: customer.name,
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
+      spesa: customer.spesa.toString(),
+      ultimoDeal: customer.ultimoDeal ? new Date(customer.ultimoDeal).toISOString().split('T')[0] : '',
+      referralId: customer.referralId || '',
+      attivo: customer.attivo,
     });
     setShowModal(true);
   };
@@ -64,9 +93,31 @@ function Customers() {
 
   const openNewModal = () => {
     setEditing(null);
-    setFormData({ name: '', email: '', phone: '', address: '' });
+    setFormData({ name: '', spesa: '0', ultimoDeal: '', referralId: '', attivo: true });
     setShowModal(true);
   };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('it-IT', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(amount);
+  };
+
+  // Filtra i clienti disponibili per referral (esclude il cliente corrente se in modifica)
+  const availableReferrals = customers.filter(c => 
+    !editing || c.id !== editing.id
+  );
 
   return (
     <div className="registro-page">
@@ -95,30 +146,61 @@ function Customers() {
         <table>
           <thead>
             <tr>
+              <th>ID</th>
               <th>Nome</th>
-              <th>Email</th>
-              <th>Telefono</th>
-              <th>Indirizzo</th>
-              <th>Azioni</th>
+              <th className="col-spesa">Spesa</th>
+              <th className="col-deal">Ultimo Deal</th>
+              <th>Referral</th>
+              <th className="col-attivo">Attivo</th>
+              <th className="col-azioni">Azioni</th>
             </tr>
           </thead>
           <tbody>
-            {customers.map((customer) => (
-              <tr key={customer.id}>
-                <td>{customer.name}</td>
-                <td>{customer.email || '-'}</td>
-                <td>{customer.phone || '-'}</td>
-                <td>{customer.address || '-'}</td>
-                <td>
-                  <button className="btn btn-secondary" onClick={() => handleEdit(customer)}>
-                    Modifica
-                  </button>
-                  <button className="btn btn-danger" onClick={() => handleDelete(customer.id)}>
-                    Elimina
-                  </button>
+            {customers.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                  Nessun cliente trovato
                 </td>
               </tr>
-            ))}
+            ) : (
+              customers.map((customer) => (
+                <tr key={customer.id}>
+                  <td>{customer.id}</td>
+                  <td>{customer.name}</td>
+                  <td className="col-spesa">{formatCurrency(customer.spesa || 0)}</td>
+                  <td className="col-deal">{formatDate(customer.ultimoDeal)}</td>
+                  <td>{customer.referral?.name || '-'}</td>
+                  <td className="col-attivo">
+                    <span style={{ 
+                      color: customer.attivo ? '#4CAF50' : '#999',
+                      fontWeight: '500'
+                    }}>
+                      {customer.attivo ? 'ON' : 'OFF'}
+                    </span>
+                  </td>
+                  <td className="col-azioni">
+                    <div className="action-buttons">
+                      <button 
+                        className="action-btn edit" 
+                        onClick={() => handleEdit(customer)}
+                        title="Modifica"
+                        type="button"
+                      >
+                        <span className="action-btn-icon">✏️</span>
+                      </button>
+                      <button 
+                        className="action-btn delete" 
+                        onClick={() => handleDelete(customer.id)}
+                        title="Elimina"
+                        type="button"
+                      >
+                        <span className="action-btn-icon">🗑️</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -141,28 +223,52 @@ function Customers() {
                 />
               </div>
               <div className="form-group">
-                <label>Email</label>
+                <label>Spesa (€)</label>
                 <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.spesa}
+                  onChange={(e) => setFormData({ ...formData, spesa: e.target.value })}
                 />
               </div>
               <div className="form-group">
-                <label>Telefono</label>
+                <label>Ultimo Deal</label>
                 <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  type="date"
+                  value={formData.ultimoDeal}
+                  onChange={(e) => setFormData({ ...formData, ultimoDeal: e.target.value })}
                 />
               </div>
               <div className="form-group">
-                <label>Indirizzo</label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
+                <label>Referral</label>
+                <select
+                  value={formData.referralId}
+                  onChange={(e) => setFormData({ ...formData, referralId: e.target.value })}
+                >
+                  <option value="">Nessuno</option>
+                  {availableReferrals.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.id} - {customer.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Attivo</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                  <label className="toggle-switch" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.attivo}
+                      onChange={(e) => setFormData({ ...formData, attivo: e.target.checked })}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <span style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+                    {formData.attivo ? 'Attivo' : 'Inattivo'}
+                  </span>
+                </div>
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
@@ -181,4 +287,3 @@ function Customers() {
 }
 
 export default Customers;
-

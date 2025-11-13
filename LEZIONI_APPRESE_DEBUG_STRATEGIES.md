@@ -451,6 +451,60 @@ onClick={async () => {
 
 ---
 
+### 9. **CONFLITTO CSS NON RILEVATO - Tabella Disallineata**
+
+#### 🔍 **Sintomi:**
+- Tabella clienti mostrava dati disallineati (colonne non corrispondevano ai dati)
+- Valore "ON" appariva sotto colonna "AZIONI" invece di "ATTIVO"
+- Il protocollo anti-regressione non ha rilevato il problema
+- Nessun errore TypeScript/LSP presente
+
+#### 🧠 **Causa Root:**
+- `Table.css` importato in `App.tsx` conteneva stili generici per `.table-container table`
+- Questi stili avevano maggiore specificità rispetto a `App.css`
+- Conflitto CSS silenzioso: nessun errore di compilazione, solo problema visivo
+- Il protocollo controlla solo errori TypeScript, non conflitti CSS
+
+#### ✅ **Soluzione Implementata:**
+```css
+/* App.css - Aumentata specificità con .registro-page */
+.registro-page .table-container table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  /* ... altri stili con !important per sovrascrivere Table.css */
+}
+
+/* Disabilitati pseudo-elementi e animazioni di Table.css */
+.registro-page .table-container table thead::before,
+.registro-page .table-container table thead::after {
+  display: none !important;
+}
+```
+
+#### 📚 **Lezione Appresa:**
+> **"I conflitti CSS non generano errori TypeScript. Il protocollo anti-regressione deve essere esteso per rilevare anche conflitti CSS e problemi di specificità. Verificare sempre import CSS e specificità quando si verificano problemi di rendering visivo."**
+
+#### 🔧 **Raccomandazioni Future:**
+1. **Best Practices CSS:**
+   - Usare classi specifiche invece di selettori generici
+   - Evitare `!important` quando possibile (usare solo quando necessario)
+   - Documentare dipendenze CSS nei componenti
+   - Testare sempre nel browser dopo modifiche CSS
+
+2. **Strategia di Debug CSS:**
+   - Ispezionare stili applicati nel browser DevTools
+   - Verificare import CSS nell'ordine corretto
+   - Controllare specificità dei selettori CSS
+   - Verificare manualmente il rendering visivo
+
+3. **Perché il Protocollo NON Rileva CSS:**
+   - I conflitti CSS sono problemi runtime nel browser
+   - Richiedono test manuali per essere verificati
+   - Non possono essere corretti automaticamente
+   - Il protocollo si concentra solo su errori TypeScript correggibili
+
+---
+
 ### 8. **ERRORE DATI MANCANTI - Form Pubblico Incompleto**
 
 #### 🔍 **Sintomi:**

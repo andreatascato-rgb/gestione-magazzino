@@ -273,6 +273,113 @@
   border: 1px solid var(--glass-border);
   overflow: hidden;
   position: relative;
+  overflow-x: auto;
+}
+
+/* Stili tabella clienti - Specificità alta per sovrascrivere Table.css */
+.registro-page .table-container table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  table-layout: auto !important;
+}
+
+.registro-page .table-container table thead {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+  position: relative !important;
+}
+
+.registro-page .table-container table thead::before,
+.registro-page .table-container table thead::after {
+  display: none !important;
+}
+
+.registro-page .table-container table thead tr {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.registro-page .table-container table th {
+  padding: 0.75rem 1rem !important;
+  text-align: left !important;
+  font-weight: var(--font-weight-semibold) !important;
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-text-primary) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  border-bottom: none !important;
+  text-shadow: none !important;
+  position: static !important;
+}
+
+.registro-page .table-container table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: background-color var(--transition-base) !important;
+  animation: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  position: relative !important;
+}
+
+.registro-page .table-container table tbody tr::before {
+  display: none !important;
+}
+
+.registro-page .table-container table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+  box-shadow: none !important;
+}
+
+.registro-page .table-container table tbody tr:hover::before {
+  display: none !important;
+}
+
+.registro-page .table-container table tbody tr:hover td {
+  color: var(--color-text-primary) !important;
+  text-shadow: none !important;
+}
+
+.registro-page .table-container table tbody tr:last-child {
+  border-bottom: none !important;
+}
+
+.registro-page .table-container table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.registro-page .table-container table td {
+  padding: 0.75rem 1rem !important;
+  color: var(--color-text-primary) !important;
+  font-size: var(--font-size-base) !important;
+  vertical-align: middle !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  position: static !important;
+  transition: none !important;
+}
+
+/* Allineamento specifico per colonne */
+.registro-page .table-container table th.col-spesa,
+.registro-page .table-container table td.col-spesa {
+  text-align: right !important;
+}
+
+.registro-page .table-container table th.col-deal,
+.registro-page .table-container table td.col-deal {
+  text-align: center !important;
+}
+
+.registro-page .table-container table th.col-attivo,
+.registro-page .table-container table td.col-attivo {
+  text-align: center !important;
+}
+
+.registro-page .table-container table th.col-azioni,
+.registro-page .table-container table td.col-azioni {
+  text-align: center !important;
 }
 
 
@@ -576,6 +683,119 @@
     rgba(230, 194, 0, 0.2) 50%,
     transparent 100%
   );
+}
+
+/* === TOGGLE SWITCH (iPhone style) === */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 51px;
+  height: 31px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: 0.3s;
+  border-radius: 34px;
+  border: 1px solid var(--color-border-dark);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 27px;
+  width: 27px;
+  left: 1px;
+  bottom: 1px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(230, 194, 0, 0.15);
+}
+
+.toggle-switch:active .toggle-slider:before {
+  width: 31px;
+}
+
+.toggle-switch input:checked:active + .toggle-slider:before {
+  transform: translateX(16px);
+}
+
+/* === ACTION BUTTONS WITH ICONS === */
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  transition: all var(--transition-luxury);
+  background: transparent;
+  color: var(--color-text-secondary);
+  min-width: 36px;
+  height: 36px;
+}
+
+.action-btn:hover {
+  background: var(--color-background-hover);
+  color: var(--color-text-primary);
+  transform: scale(1.05);
+}
+
+.action-btn.edit {
+  color: var(--color-primary);
+}
+
+.action-btn.edit:hover {
+  background: rgba(230, 194, 0, 0.1);
+  color: var(--color-primary);
+}
+
+.action-btn.delete {
+  color: #ff4444;
+}
+
+.action-btn.delete:hover {
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+}
+
+.action-btn-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 /* === RESPONSIVE === */

@@ -52,13 +52,16 @@ model StockLevel {
 
 // Clienti
 model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id
+  name         String
+  spesa        Decimal   @default(0) @db.Decimal(10, 2)
+  ultimoDeal   DateTime?
+  referralId   String?
+  referral     Customer? @relation("CustomerReferral", fields: [referralId], references: [id], onDelete: SetNull)
+  referredBy   Customer[] @relation("CustomerReferral")
+  attivo       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 // Casse

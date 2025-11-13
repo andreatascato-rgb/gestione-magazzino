@@ -33,9 +33,11 @@ export interface StockLevel {
 export interface Customer {
   id: string;
   name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  spesa: number;
+  ultimoDeal?: string;
+  referralId?: string;
+  referral?: Customer;
+  attivo: boolean;
   createdAt: string;
   updatedAt: string;
 }
