@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import { Customer } from '../types';
 
@@ -10,6 +10,11 @@ function Customers() {
     name: '', 
     referralId: ''
   });
+
+  // Stato per i filtri base
+  const [searchName, setSearchName] = useState('');
+  const [filterAttivo, setFilterAttivo] = useState<'all' | 'attivo' | 'inattivo'>('all');
+  const [filterReferral, setFilterReferral] = useState<string>('all');
 
   useEffect(() => {
     loadCustomers();
@@ -140,6 +145,62 @@ function Customers() {
     !editing || c.id !== editing.id
   );
 
+  // Lista di tutti i referral disponibili (per il filtro)
+  const allReferrals = useMemo(() => {
+    const referralMap = new Map<string, Customer>();
+    customers.forEach(customer => {
+      if (customer.referralId && customer.referral) {
+        referralMap.set(customer.referralId, customer.referral);
+      }
+    });
+    return Array.from(referralMap.values());
+  }, [customers]);
+
+  // Funzione di filtraggio (solo filtri base)
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(customer => {
+      // Filtro per nome (case-insensitive, ricerca parziale)
+      if (searchName.trim()) {
+        const searchLower = searchName.toLowerCase().trim();
+        if (!customer.name.toLowerCase().includes(searchLower)) {
+          return false;
+        }
+      }
+
+      // Filtro per stato attivo/inattivo
+      if (filterAttivo !== 'all') {
+        if (filterAttivo === 'attivo' && !customer.attivo) {
+          return false;
+        }
+        if (filterAttivo === 'inattivo' && customer.attivo) {
+          return false;
+        }
+      }
+
+      // Filtro per referral
+      if (filterReferral !== 'all') {
+        if (customer.referralId !== filterReferral) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [customers, searchName, filterAttivo, filterReferral]);
+
+  // Funzioni handler per i filtri
+  const handleResetFilters = () => {
+    setSearchName('');
+    setFilterAttivo('all');
+    setFilterReferral('all');
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    return searchName.trim() !== '' ||
+      filterAttivo !== 'all' ||
+      filterReferral !== 'all';
+  }, [searchName, filterAttivo, filterReferral]);
+
   return (
     <div className="registro-page">
       <div className="page-breadcrumb">
@@ -163,6 +224,73 @@ function Customers() {
         </button>
       </div>
 
+      {/* Pannello Filtri */}
+      <div className="filters-panel">
+        <div className="filters-bar">
+          <div className="search-input-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Cerca per nome..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+            />
+          </div>
+          <div className="filters-actions">
+            <div className="filter-group-inline">
+              <label>Stato</label>
+              <select
+                value={filterAttivo}
+                onChange={(e) => setFilterAttivo(e.target.value as 'all' | 'attivo' | 'inattivo')}
+              >
+                <option value="all">Tutti</option>
+                <option value="attivo">Solo Attivi</option>
+                <option value="inattivo">Solo Inattivi</option>
+              </select>
+            </div>
+
+            <div className="filter-group-inline">
+              <label>Referral</label>
+              <select
+                value={filterReferral}
+                onChange={(e) => setFilterReferral(e.target.value)}
+              >
+                <option value="all">Tutti</option>
+                {allReferrals.map((referral) => (
+                  <option key={referral.id} value={referral.id}>
+                    {referral.id} - {referral.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleResetFilters}
+              >
+                Reset Filtri
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="filter-results-count">
+          {hasActiveFilters ? (
+            <span>
+              <strong>{filteredCustomers.length}</strong> {filteredCustomers.length === 1 ? 'cliente trovato' : 'clienti trovati'} 
+              {' '}su {customers.length} totali
+            </span>
+          ) : (
+            <span>
+              <strong>{customers.length}</strong> {customers.length === 1 ? 'cliente totale' : 'clienti totali'}
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="table-container">
         <table>
           <thead>
@@ -183,8 +311,14 @@ function Customers() {
                   Nessun cliente trovato
                 </td>
               </tr>
+            ) : filteredCustomers.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                  Nessun risultato per i filtri selezionati
+                </td>
+              </tr>
             ) : (
-              customers.map((customer) => (
+              filteredCustomers.map((customer) => (
                 <tr key={customer.id}>
                   <td className="col-id">{customer.id}</td>
                   <td className="col-nome">{customer.name}</td>
