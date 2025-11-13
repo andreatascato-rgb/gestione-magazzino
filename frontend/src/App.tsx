@@ -20,17 +20,17 @@ function App() {
       <div className="app">
         <Sidebar />
         <div className="app-content">
-          <main className="app-main">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/warehouses" element={<Warehouses />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/cash-registers" element={<CashRegisters />} />
-              <Route path="/stock-movements" element={<StockMovements />} />
-              <Route path="/cash-movements" element={<CashMovements />} />
-            </Routes>
-          </main>
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/warehouses" element={<Warehouses />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/cash-registers" element={<CashRegisters />} />
+            <Route path="/stock-movements" element={<StockMovements />} />
+            <Route path="/cash-movements" element={<CashMovements />} />
+          </Routes>
+        </main>
         </div>
       </div>
     </Router>

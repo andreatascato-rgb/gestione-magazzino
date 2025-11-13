@@ -11,11 +11,9 @@
   background: linear-gradient(
     180deg,
     rgba(18, 18, 20, 0.98) 0%,
-    rgba(24, 24, 27, 0.95) 50%,
+    rgba(22, 22, 24, 0.96) 50%,
     rgba(18, 18, 20, 0.98) 100%
   );
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 
     4px 0 24px rgba(0, 0, 0, 0.4),
@@ -25,6 +23,41 @@
   z-index: var(--z-index-fixed);
   transition: width var(--transition-base), box-shadow var(--transition-base);
   overflow: hidden;
+  position: relative;
+}
+
+.sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(230, 194, 0, 0.3) 20%,
+    rgba(230, 194, 0, 0.4) 50%,
+    rgba(230, 194, 0, 0.3) 80%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity var(--transition-luxury);
+  box-shadow: 0 0 20px rgba(230, 194, 0, 0.3);
+  animation: sidebarGlow 4s ease-in-out infinite;
+}
+
+@keyframes sidebarGlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.sidebar:hover::after {
+  opacity: 1;
 }
 
 .sidebar:hover {
@@ -59,8 +92,6 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-base);
@@ -97,17 +128,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-700) 50%, var(--color-primary-dark) 100%);
   border-radius: var(--radius-lg);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-xl);
-  color: var(--color-neutral-900);
+  color: var(--color-text-inverse);
   box-shadow: 
-    0 4px 12px rgba(255, 199, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 4px 16px rgba(230, 194, 0, 0.4),
+    0 2px 8px rgba(230, 194, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(230, 194, 0, 0.3);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
+  transition: all var(--transition-luxury);
+}
+
+.sidebar:hover .sidebar-logo-icon {
+  animation: glowPulse 3s ease-in-out infinite;
 }
 
 .sidebar-logo-icon::before {
@@ -188,35 +227,44 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-700) 50%, var(--color-primary-dark) 100%);
   border-radius: 0 var(--radius-full) var(--radius-full) 0;
   opacity: 0;
   transform: scaleY(0);
-  transition: all var(--transition-base);
-  box-shadow: 0 0 12px rgba(255, 199, 0, 0.5);
+  transition: all var(--transition-luxury);
+  box-shadow: 
+    0 0 16px rgba(230, 194, 0, 0.6),
+    0 0 8px rgba(230, 194, 0, 0.3);
 }
 
 .sidebar-nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
   color: var(--color-text-inverse);
-  transform: translateX(4px);
+  transform: translateX(6px);
   box-shadow: 
-    inset 0 0 20px rgba(255, 199, 0, 0.05),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    inset 0 0 20px rgba(230, 194, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-nav-item.active {
   background: linear-gradient(
     90deg,
-    rgba(255, 199, 0, 0.15) 0%,
-    rgba(255, 199, 0, 0.08) 50%,
+    rgba(230, 194, 0, 0.18) 0%,
+    rgba(230, 194, 0, 0.1) 50%,
     transparent 100%
   );
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
   box-shadow: 
-    inset 0 0 30px rgba(255, 199, 0, 0.1),
-    0 2px 12px rgba(0, 0, 0, 0.3);
+    inset 0 0 30px rgba(230, 194, 0, 0.12),
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(230, 194, 0, 0.1);
+  border-left: 1px solid rgba(230, 194, 0, 0.3);
 }
 
 .sidebar-nav-item.active::before {
@@ -324,8 +372,6 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     z-index: calc(var(--z-index-fixed) - 1);
     animation: fadeIn var(--transition-base);
   }

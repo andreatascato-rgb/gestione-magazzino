@@ -45,10 +45,10 @@ function Home() {
         stockMovements,
         cashMovements,
       ] = await Promise.all([
-        api.get('/warehouses'),
-        api.get('/products'),
-        api.get('/customers'),
-        api.get('/cash-registers'),
+      api.get('/warehouses'),
+      api.get('/products'),
+      api.get('/customers'),
+      api.get('/cash-registers'),
         api.get('/stock-movements'),
         api.get('/cash-movements'),
       ]);
@@ -79,7 +79,7 @@ function Home() {
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
-      setStats({
+        setStats({
         warehouses: warehousesRes.data.length,
         products: productsRes.data.length,
         customers: customersRes.data.length,
@@ -88,7 +88,7 @@ function Home() {
         lowStockProducts: lowStock.length,
         recentStockMovements: recentStock,
         recentCashMovements: recentCash,
-      });
+        });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       showToast('Errore nel caricamento dei dati della dashboard', 'error');
@@ -189,8 +189,8 @@ function Home() {
             <div className="stat-card-info">
               <h3 className="stat-card-label">Clienti</h3>
               <p className="stat-card-value">{stats.customers}</p>
-            </div>
-          </div>
+        </div>
+        </div>
           <Link to="/customers" className="stat-card-link">
             <Button variant="outline" size="sm">
               Gestisci →
@@ -212,11 +212,11 @@ function Home() {
                 <line x1="12" y1="1" x2="12" y2="23"></line>
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
               </svg>
-            </div>
+        </div>
             <div className="stat-card-info">
               <h3 className="stat-card-label">Casse</h3>
               <p className="stat-card-value">{stats.cashRegisters}</p>
-            </div>
+        </div>
           </div>
           <Link to="/cash-registers" className="stat-card-link">
             <Button variant="outline" size="sm">

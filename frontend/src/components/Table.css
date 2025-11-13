@@ -13,13 +13,27 @@
 }
 
 .table thead {
-  background: linear-gradient(
-    180deg,
-    var(--color-background-elevated) 0%,
-    var(--color-background-tertiary) 100%
-  );
+  background: var(--glass-bg-luxury);
   border-bottom: 2px solid var(--color-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.table thead::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(230, 194, 0, 0.2) 50%,
+    transparent 100%
+  );
 }
 
 .table th {
@@ -41,11 +55,48 @@
 }
 
 .table tbody tr {
-  transition: var(--transition-fast);
+  transition: all var(--transition-luxury);
+  animation: fadeInUp 0.4s ease-out backwards;
+  position: relative;
+}
+
+.table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.table tbody tr:nth-child(4) { animation-delay: 0.15s; }
+.table tbody tr:nth-child(5) { animation-delay: 0.2s; }
+
+.table tbody tr::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  opacity: 0;
+  transform: scaleX(0);
+  transition: all var(--transition-luxury);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
 }
 
 .table tbody tr:hover {
-  background-color: var(--color-background-hover);
+  background: linear-gradient(
+    90deg,
+    var(--color-background-hover) 0%,
+    var(--color-background-active) 100%
+  );
+  transform: translateX(4px);
+  box-shadow: 
+    inset 4px 0 0 rgba(230, 194, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 0 15px rgba(230, 194, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.table tbody tr:hover::before {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .table tbody tr:last-child td {
