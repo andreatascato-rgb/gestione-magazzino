@@ -63,6 +63,7 @@ model Customer {
   attivo       Boolean   @default(true)
   isReferral   Boolean   @default(false)
   referralColor String?
+  notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }

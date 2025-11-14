@@ -64,6 +64,7 @@ router.get('/', async (req, res) => {
       attivo: customer.attivo,
       isReferral: customer.isReferral,
       referralColor: customer.referralColor,
+      notes: customer.notes || null,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     }));
@@ -111,6 +112,7 @@ router.get('/:id', async (req, res) => {
       attivo: customer.attivo,
       isReferral: customer.isReferral,
       referralColor: customer.referralColor,
+      notes: customer.notes || null,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };
@@ -125,7 +127,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/customers - Crea nuovo cliente
 router.post('/', async (req, res) => {
   try {
-    const { name, spesa, ultimoDeal, referralId, attivo } = req.body;
+    const { name, spesa, ultimoDeal, referralId, attivo, notes } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Il nome è obbligatorio' });
     }
@@ -151,6 +153,7 @@ router.post('/', async (req, res) => {
         ultimoDeal: ultimoDeal ? new Date(ultimoDeal) : null,
         referralId: referralId || null,
         attivo: attivo !== undefined ? attivo : true,
+        notes: notes || null,
       },
       include: {
         referral: {
@@ -180,6 +183,7 @@ router.post('/', async (req, res) => {
       attivo: customer.attivo,
       isReferral: customer.isReferral,
       referralColor: customer.referralColor,
+      notes: customer.notes || null,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };
@@ -194,7 +198,7 @@ router.post('/', async (req, res) => {
 // PUT /api/customers/:id - Aggiorna cliente
 router.put('/:id', async (req, res) => {
   try {
-    const { name, spesa, ultimoDeal, referralId, attivo } = req.body;
+    const { name, spesa, ultimoDeal, referralId, attivo, notes } = req.body;
     
     // Verifica che il referral esista se fornito
     if (referralId) {
@@ -218,6 +222,7 @@ router.put('/:id', async (req, res) => {
         ultimoDeal: ultimoDeal ? new Date(ultimoDeal) : ultimoDeal === null ? null : undefined,
         referralId: referralId !== undefined ? (referralId || null) : undefined,
         attivo: attivo !== undefined ? attivo : undefined,
+        notes: notes !== undefined ? (notes || null) : undefined,
       },
       include: {
         referral: {
@@ -247,6 +252,7 @@ router.put('/:id', async (req, res) => {
       attivo: customer.attivo,
       isReferral: customer.isReferral,
       referralColor: customer.referralColor,
+      notes: customer.notes || null,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };
@@ -255,6 +261,56 @@ router.put('/:id', async (req, res) => {
   } catch (error: any) {
     console.error('Error updating customer:', error);
     res.status(500).json({ error: 'Errore nell\'aggiornamento del cliente' });
+  }
+});
+
+// PUT /api/customers/:id/notes - Aggiorna solo le note del cliente
+router.put('/:id/notes', async (req, res) => {
+  try {
+    const { notes } = req.body;
+    
+    const customer = await prisma.customer.update({
+      where: { id: req.params.id },
+      data: {
+        notes: notes !== undefined ? (notes || null) : undefined,
+      },
+      include: {
+        referral: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            referredBy: true,
+          },
+        },
+      },
+    });
+    
+    // Converti Decimal a number e DateTime a string per il frontend
+    const formattedCustomer = {
+      id: customer.id,
+      name: customer.name,
+      spesa: parseFloat(customer.spesa.toString()),
+      debito: parseFloat(customer.debito.toString()),
+      ultimoDeal: customer.ultimoDeal ? customer.ultimoDeal.toISOString() : null,
+      referralId: customer.referralId,
+      referral: customer.referral,
+      referredByCount: customer._count.referredBy,
+      attivo: customer.attivo,
+      isReferral: customer.isReferral,
+      referralColor: customer.referralColor,
+      notes: customer.notes || null,
+      createdAt: customer.createdAt.toISOString(),
+      updatedAt: customer.updatedAt.toISOString(),
+    };
+    
+    res.json(formattedCustomer);
+  } catch (error: any) {
+    console.error('Error updating notes:', error);
+    res.status(500).json({ error: 'Errore nell\'aggiornamento delle note' });
   }
 });
 
@@ -297,6 +353,7 @@ router.put('/:id/referral', async (req, res) => {
       attivo: customer.attivo,
       isReferral: customer.isReferral,
       referralColor: customer.referralColor,
+      notes: customer.notes || null,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
     };

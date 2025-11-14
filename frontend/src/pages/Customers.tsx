@@ -55,17 +55,9 @@ function Customers() {
   // Stato per modal dettagli cliente
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [customerNotes, setCustomerNotes] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('customer-notes');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return {};
-      }
-    }
-    return {};
-  });
+  const [localNotes, setLocalNotes] = useState<string>('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [notesSaveTimeout, setNotesSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Stato per colonne personalizzabili
   type ColumnKey = 'id' | 'nome' | 'spesa' | 'debito' | 'ultimoDeal' | 'referral' | 'referiti' | 'attivo' | 'azioni';
@@ -140,6 +132,15 @@ function Customers() {
     loadCustomers();
   }, []);
 
+  // Cleanup timeout quando il componente viene smontato
+  useEffect(() => {
+    return () => {
+      if (notesSaveTimeout) {
+        clearTimeout(notesSaveTimeout);
+      }
+    };
+  }, [notesSaveTimeout]);
+
   const loadCustomers = async () => {
     setLoading(true);
     try {
@@ -158,6 +159,7 @@ function Customers() {
         attivo: customer.attivo !== undefined ? customer.attivo : true,
         isReferral: customer.isReferral || false,
         referralColor: customer.referralColor || undefined,
+        notes: customer.notes || undefined,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       }));
@@ -311,7 +313,39 @@ function Customers() {
   // Handler per aprire modal dettagli
   const handleCustomerClick = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setLocalNotes(customer.notes || '');
     setShowDetailsModal(true);
+  };
+
+  // Funzione per salvare le note con debounce
+  const saveNotes = async (customerId: string, notes: string) => {
+    if (notesSaveTimeout) {
+      clearTimeout(notesSaveTimeout);
+    }
+
+    const timeout = setTimeout(async () => {
+      setIsSavingNotes(true);
+      try {
+        const response = await api.put(`/customers/${customerId}/notes`, { notes });
+        // Aggiorna il cliente nella lista con le nuove note
+        setCustomers(prevCustomers =>
+          prevCustomers.map(c =>
+            c.id === customerId ? { ...c, notes: response.data.notes } : c
+          )
+        );
+        // Aggiorna anche selectedCustomer se è lo stesso
+        if (selectedCustomer && selectedCustomer.id === customerId) {
+          setSelectedCustomer({ ...selectedCustomer, notes: response.data.notes });
+        }
+      } catch (error: any) {
+        console.error('Error saving notes:', error);
+        showToast(error.response?.data?.error || 'Errore nel salvataggio delle note', 'error');
+      } finally {
+        setIsSavingNotes(false);
+      }
+    }, 1000); // Debounce di 1 secondo
+
+    setNotesSaveTimeout(timeout);
   };
 
   // Handler per modificare dal modal dettagli
@@ -1587,17 +1621,22 @@ function Customers() {
               <textarea
                 className="customer-details-notes-textarea"
                 placeholder="Aggiungi note su questo cliente..."
-                value={customerNotes[selectedCustomer.id] || ''}
+                value={localNotes}
                 onChange={(e) => {
-                  const newNotes = {
-                    ...customerNotes,
-                    [selectedCustomer.id]: e.target.value,
-                  };
-                  setCustomerNotes(newNotes);
-                  localStorage.setItem('customer-notes', JSON.stringify(newNotes));
+                  const newNotes = e.target.value;
+                  setLocalNotes(newNotes);
+                  if (selectedCustomer) {
+                    saveNotes(selectedCustomer.id, newNotes);
+                  }
                 }}
                 rows={3}
+                disabled={isSavingNotes}
               />
+              {isSavingNotes && (
+                <div style={{ marginTop: 'var(--spacing-2)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                  <LoadingSpinner size="sm" /> Salvataggio...
+                </div>
+              )}
             </div>
 
             {/* Movimenti */}
@@ -1616,8 +1655,13 @@ function Customers() {
             <button
               className="btn btn-secondary"
               onClick={() => {
+                // Pulisci il timeout se esiste prima di chiudere
+                if (notesSaveTimeout) {
+                  clearTimeout(notesSaveTimeout);
+                }
                 setShowDetailsModal(false);
                 setSelectedCustomer(null);
+                setLocalNotes('');
               }}
             >
               Chiudi

@@ -42,6 +42,7 @@ export interface Customer {
   attivo: boolean;
   isReferral?: boolean;
   referralColor?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
