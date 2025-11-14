@@ -95,6 +95,7 @@ function Customers() {
     };
   });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const { showToast } = useToast();
 
@@ -773,6 +774,28 @@ function Customers() {
             </div>
           </div>
         </Card>
+        <Card className="customer-metric-card customer-stat-card-primary" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <path d="M20 8v6M23 11h-6"></path>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Numero Referral</h3>
+              <p className="customer-stat-card-value">{allReferrals.length}</p>
+            </div>
+          </div>
+        </Card>
         <Card className="customer-metric-card customer-stat-card-success" hover>
           <div className="customer-stat-card-content">
             <div className="customer-stat-card-icon">
@@ -807,8 +830,10 @@ function Customers() {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                <circle cx="12" cy="12" r="1" fill="currentColor"></circle>
+                <line x1="8" y1="8" x2="16" y2="16" strokeWidth="2.5"></line>
               </svg>
             </div>
             <div className="customer-stat-card-info">
@@ -819,112 +844,154 @@ function Customers() {
             </div>
           </div>
         </Card>
+        <Card className="customer-metric-card customer-stat-card-warning" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <circle cx="18" cy="8" r="1" fill="currentColor"></circle>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Numero Debitori</h3>
+              <p className="customer-stat-card-value">
+                {customers.filter(c => (c.debito || 0) > 0).length}
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Pannello Filtri */}
       <div className="filters-panel">
         <div className="filters-bar">
           <div className="filters-actions">
-            <div className="filter-group-inline filter-group-search">
-              <label>Cerca</label>
-              <div className="search-input-wrapper-inline">
-                <span className="search-icon">🔍</span>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Cerca per nome, ID o referral..."
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-                {searchName.trim() && (
-                  <button
-                    type="button"
-                    className="search-clear-btn"
-                    onClick={() => setSearchName('')}
-                    title="Cancella ricerca"
-                  >
-                    ×
-                  </button>
-                )}
+            {/* Prima riga: Cerca, Filtri Avanzati, Reset */}
+            <div className="filters-main-row">
+              <div className="filter-group-inline filter-group-search">
+                <label>Cerca</label>
+                <div className="search-input-wrapper-inline">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Cerca per nome, ID o referral..."
+                    value={searchName}
+                    onChange={(e) => setSearchName(e.target.value)}
+                  />
+                  {searchName.trim() && (
+                    <button
+                      type="button"
+                      className="search-clear-btn"
+                      onClick={() => setSearchName('')}
+                      title="Cancella ricerca"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              >
+                {showAdvancedFilters ? '▼' : '▶'} Filtri Avanzati
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleResetFilters}
+                disabled={!hasActiveFilters}
+              >
+                Reset Filtri
+              </button>
             </div>
 
-            <div className="filter-group-inline">
-              <label>Spesa Min</label>
-              <input
-                type="number"
-                className="filter-input-number"
-                placeholder="€ 0.00"
-                value={spesaMin}
-                onChange={(e) => setSpesaMin(e.target.value)}
-                step="0.01"
-                min="0"
-              />
-            </div>
+            {/* Seconda riga: Filtri avanzati (condizionale) */}
+            {showAdvancedFilters && (
+              <div className="filters-advanced-row">
+                <div className="filter-group-inline">
+                  <label>Spesa Min</label>
+                  <input
+                    type="number"
+                    className="filter-input-number"
+                    placeholder="€ 0.00"
+                    value={spesaMin}
+                    onChange={(e) => setSpesaMin(e.target.value)}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
 
-            <div className="filter-group-inline">
-              <label>Spesa Max</label>
-              <input
-                type="number"
-                className="filter-input-number"
-                placeholder="€ 0.00"
-                value={spesaMax}
-                onChange={(e) => setSpesaMax(e.target.value)}
-                step="0.01"
-                min="0"
-              />
-            </div>
+                <div className="filter-group-inline">
+                  <label>Spesa Max</label>
+                  <input
+                    type="number"
+                    className="filter-input-number"
+                    placeholder="€ 0.00"
+                    value={spesaMax}
+                    onChange={(e) => setSpesaMax(e.target.value)}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
 
-            <div className="filter-group-inline">
-              <label>Stato</label>
-              <Dropdown
-                value={filterAttivo}
-                onChange={(value) => setFilterAttivo(value as 'all' | 'attivo' | 'inattivo')}
-                options={statoOptions}
-                placeholder="Seleziona stato"
-              />
-            </div>
+                <div className="filter-group-inline">
+                  <label>Stato</label>
+                  <Dropdown
+                    value={filterAttivo}
+                    onChange={(value) => setFilterAttivo(value as 'all' | 'attivo' | 'inattivo')}
+                    options={statoOptions}
+                    placeholder="Seleziona stato"
+                  />
+                </div>
 
-            <div className="filter-group-inline">
-              <label>Referral</label>
-              <Dropdown
-                value={filterReferral}
-                onChange={(value) => setFilterReferral(value)}
-                options={referralOptions}
-                placeholder="Seleziona referral"
-                searchable={true}
-                searchPlaceholder="Cerca referral..."
-              />
-            </div>
+                <div className="filter-group-inline">
+                  <label>Referral</label>
+                  <Dropdown
+                    value={filterReferral}
+                    onChange={(value) => setFilterReferral(value)}
+                    options={referralOptions}
+                    placeholder="Seleziona referral"
+                    searchable={true}
+                    searchPlaceholder="Cerca referral..."
+                  />
+                </div>
 
-            <div className="filter-group-inline">
-              <label>Debito</label>
-              <Dropdown
-                value={filterDebito}
-                onChange={(value) => setFilterDebito(value as 'all' | 'con' | 'senza')}
-                options={debitoOptions}
-                placeholder="Seleziona debito"
-              />
-            </div>
+                <div className="filter-group-inline">
+                  <label>Debito</label>
+                  <Dropdown
+                    value={filterDebito}
+                    onChange={(value) => setFilterDebito(value as 'all' | 'con' | 'senza')}
+                    options={debitoOptions}
+                    placeholder="Seleziona debito"
+                  />
+                </div>
 
-            <div className="filter-group-inline">
-              <label>Ultimo Deal</label>
-              <Dropdown
-                value={filterPeriodoDeal}
-                onChange={(value) => setFilterPeriodoDeal(value as 'all' | '30' | '60' | '90')}
-                options={periodoDealOptions}
-                placeholder="Seleziona periodo"
-              />
-            </div>
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleResetFilters}
-              disabled={!hasActiveFilters}
-            >
-              Reset Filtri
-            </button>
+                <div className="filter-group-inline">
+                  <label>Ultimo Deal</label>
+                  <Dropdown
+                    value={filterPeriodoDeal}
+                    onChange={(value) => setFilterPeriodoDeal(value as 'all' | '30' | '60' | '90')}
+                    options={periodoDealOptions}
+                    placeholder="Seleziona periodo"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

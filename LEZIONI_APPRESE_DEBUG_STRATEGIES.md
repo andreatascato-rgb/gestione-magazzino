@@ -2009,6 +2009,113 @@ Questa sessione ha dimostrato l'importanza di:
 
 ---
 
+## 📅 **AGGIORNAMENTO: [Data corrente]**
+## 🎯 **Sessione: Layout CSS - Bordo Inferiore Tabella Tagliato (Flexbox + Overflow)**
+
+### 36. **ERRORE CSS LAYOUT - Bordo Inferiore Tabella Tagliato in Schermo Normale**
+
+#### 🔍 **Sintomi:**
+- Bordo inferiore del contenitore della tabella non visibile in modalità "schermo normale"
+- Bordo inferiore visibile solo in modalità "schermo intero" (full-screen)
+- Tabella appare "tagliata" in basso, specialmente con Windows taskbar visibile
+- Layout flexbox con `overflow: hidden` causa taglio del padding-bottom
+- Problema persiste dopo numerosi tentativi di correzione
+
+#### 🧠 **Strategia di Debug Applicata:**
+1. **Analisi Sistematica Layout** - Identificato gerarchia completa: `.app` → `.app-content` → `.app-main` → `.registro-page` → `.table-container`
+2. **Riscrittura Completa** - Eliminate tutte le regole di dimensioni dinamiche e riscritte da zero
+3. **Approccio Coerente** - Applicato pattern uniforme dall'alto verso il basso
+4. **Gestione Overflow** - Separato overflow tra contenitori (overflow: hidden su `.app-main`, overflow: visible su `.registro-page`)
+5. **Padding vs Pseudo-elemento** - Usato `::after` con `flex: 0 0` invece di `padding-bottom` per creare spazio visibile
+
+#### ✅ **Soluzione Implementata:**
+```css
+/* === LAYOUT CONTAINER === */
+.app {
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1 1 0%;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* === MAIN CONTENT === */
+.app-main {
+  flex: 1 1 0%;
+  padding: var(--content-padding); /* Padding completo incluso bottom */
+  overflow: hidden; /* Previene scroll pagina */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* === REGISTRO PAGE STYLES === */
+.registro-page {
+  position: relative;
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  overflow: visible; /* Permette al ::after di essere visibile */
+  min-height: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.registro-page::after {
+  content: '';
+  flex: 0 0 var(--content-padding); /* Spazio fisso alla fine */
+  min-height: var(--content-padding);
+  width: 100%;
+  order: 999; /* Posiziona alla fine */
+  flex-shrink: 0; /* Non si restringe */
+}
+
+/* === TABLES === */
+.table-container {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden; /* Scroll interno gestito da .table-container-inner */
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.table-container-inner {
+  overflow-x: auto;
+  overflow-y: auto; /* UNICO elemento scrollabile */
+  flex: 1 1 0%;
+  min-height: 0;
+  width: 100%;
+}
+```
+
+#### 📚 **Lezione Appresa:**
+> **"Quando si lavora con layout flexbox complessi e overflow, riscrivere da zero è più efficace che cercare di aggiustare regole esistenti. Pattern coerente: overflow: hidden su contenitori padre per prevenire scroll pagina, overflow: visible sul contenitore che deve mostrare pseudo-elementi, e unico elemento scrollabile all'interno (table-container-inner). Usare `::after` con `flex: 0 0` invece di `padding-bottom` quando l'elemento ha `overflow: hidden` per garantire visibilità dello spazio finale."**
+
+#### 🔧 **Raccomandazioni Future:**
+1. **Riscrittura vs Aggiustamento:**
+   - Se un problema CSS persiste dopo 3+ tentativi, riscrivere da zero
+   - Partire da una base pulita e coerente invece di aggiungere patch
+   - Documentare il pattern finale per riutilizzo futuro
+
+2. **Pattern Layout Flexbox:**
+   - Ogni livello propaga `flex: 1 1 0%` e `min-height: 0` verso il basso
+   - Solo l'ultimo livello scrollabile ha `overflow: auto`
+   - Padding-bottom gestito con `::after` invece che padding diretto quando overflow: hidden
+   - Usare `overflow: visible` solo dove necessario per pseudo-elementi
+
+3. **Debug Layout:**
+   - Analizzare gerarchia completa dall'alto verso il basso
+   - Verificare overflow a ogni livello
+   - Testare in modalità schermo normale E schermo intero
+   - Considerare spazio occupato da taskbar/barre sistema
+
+---
+
 ## 📅 **AGGIORNAMENTO: 29 Gennaio 2025**
 ## 🎯 **Sessione: Numero Progressivo Telemarketing - Isolamento Componenti e Schema/Migration Mismatch**
 
