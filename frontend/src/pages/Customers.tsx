@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import { Customer } from '../types';
-import { useToast, ConfirmDialog, LoadingSpinner, Badge, Dropdown } from '../components';
+import { useToast, ConfirmDialog, LoadingSpinner, Badge, Dropdown, Modal } from '../components';
 import type { DropdownOption } from '../components';
 
 function Customers() {
@@ -17,6 +17,8 @@ function Customers() {
   const [searchName, setSearchName] = useState('');
   const [filterAttivo, setFilterAttivo] = useState<'all' | 'attivo' | 'inattivo'>('all');
   const [filterReferral, setFilterReferral] = useState<string>('all');
+  const [spesaMin, setSpesaMin] = useState<string>('');
+  const [spesaMax, setSpesaMax] = useState<string>('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; customerId: string | null }>({
     isOpen: false,
     customerId: null,
@@ -47,6 +49,39 @@ function Customers() {
     isOpen: false,
     customerId: null,
   });
+
+  // Stato per modal dettagli cliente
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Stato per colonne personalizzabili
+  type ColumnKey = 'id' | 'nome' | 'spesa' | 'debito' | 'ultimoDeal' | 'referral' | 'referiti' | 'attivo' | 'azioni';
+  const [columnVisibility, setColumnVisibility] = useState<Record<ColumnKey, boolean>>(() => {
+    const saved = localStorage.getItem('customer-columns-visibility');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Rimuovi movimenti se presente (non più usato come colonna)
+        const { movimenti, ...rest } = parsed;
+        return rest;
+      } catch {
+        // Fallback a default se il parsing fallisce
+      }
+    }
+    // Default: tutte le colonne visibili
+    return {
+      id: true,
+      nome: true,
+      spesa: true,
+      debito: true,
+      ultimoDeal: true,
+      referral: true,
+      referiti: true,
+      attivo: true,
+      azioni: true,
+    };
+  });
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
 
   const { showToast } = useToast();
 
@@ -248,9 +283,61 @@ function Customers() {
     }).format(amount);
   };
 
-  // Filtra i clienti disponibili per referral (esclude il cliente corrente se in modifica)
+  // Funzione per calcolare giorni dall'ultimo deal
+  const getDaysSinceLastDeal = (ultimoDeal?: string): number | null => {
+    if (!ultimoDeal) return null;
+    const lastDealDate = new Date(ultimoDeal);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - lastDealDate.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Handler per aprire modal dettagli
+  const handleCustomerClick = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowDetailsModal(true);
+  };
+
+  // Handler per modificare dal modal dettagli
+  const handleEditFromDetails = () => {
+    if (selectedCustomer) {
+      setShowDetailsModal(false);
+      handleEdit(selectedCustomer);
+    }
+  };
+
+  // Handler per toggle visibilità colonna
+  const toggleColumnVisibility = (column: ColumnKey) => {
+    const newVisibility = {
+      ...columnVisibility,
+      [column]: !columnVisibility[column],
+    };
+    setColumnVisibility(newVisibility);
+    localStorage.setItem('customer-columns-visibility', JSON.stringify(newVisibility));
+  };
+
+  // Calcola numero colonne visibili per colSpan
+  const visibleColumnsCount = useMemo(() => {
+    return Object.values(columnVisibility).filter(Boolean).length;
+  }, [columnVisibility]);
+
+  // Mappa nomi colonne
+  const columnLabels: Record<ColumnKey, string> = {
+    id: 'ID',
+    nome: 'Nome',
+    spesa: 'Spesa',
+    debito: 'Debito',
+    ultimoDeal: 'Ultimo Deal',
+    referral: 'Referral',
+    referiti: 'Referiti',
+    attivo: 'Attivo',
+    azioni: 'Azioni',
+  };
+
+  // Filtra i clienti disponibili per referral (solo quelli configurati come referral, esclude il cliente corrente se in modifica)
   const availableReferrals = customers.filter(c => 
-    !editing || c.id !== editing.id
+    c.isReferral === true && (!editing || c.id !== editing.id)
   );
 
   // Lista di tutti i referral disponibili (per il filtro)
@@ -435,6 +522,22 @@ function Customers() {
         }
       }
 
+      // Filtro per spesa minima
+      if (spesaMin.trim()) {
+        const minSpesa = parseFloat(spesaMin.trim());
+        if (!isNaN(minSpesa) && (customer.spesa || 0) < minSpesa) {
+          return false;
+        }
+      }
+
+      // Filtro per spesa massima
+      if (spesaMax.trim()) {
+        const maxSpesa = parseFloat(spesaMax.trim());
+        if (!isNaN(maxSpesa) && (customer.spesa || 0) > maxSpesa) {
+          return false;
+        }
+      }
+
       return true;
     });
 
@@ -480,28 +583,63 @@ function Customers() {
     }
 
     return filtered;
-  }, [customers, searchName, filterAttivo, filterReferral, sortColumn, sortDirection]);
+  }, [customers, searchName, filterAttivo, filterReferral, spesaMin, spesaMax, sortColumn, sortDirection]);
 
   // Funzioni handler per i filtri
   const handleResetFilters = () => {
     setSearchName('');
     setFilterAttivo('all');
     setFilterReferral('all');
+    setSpesaMin('');
+    setSpesaMax('');
   };
 
   const hasActiveFilters = useMemo(() => {
     return searchName.trim() !== '' ||
       filterAttivo !== 'all' ||
-      filterReferral !== 'all';
-  }, [searchName, filterAttivo, filterReferral]);
+      filterReferral !== 'all' ||
+      spesaMin.trim() !== '' ||
+      spesaMax.trim() !== '';
+  }, [searchName, filterAttivo, filterReferral, spesaMin, spesaMax]);
 
-  // Mostra loading spinner durante caricamento iniziale
+  // Mostra loading skeleton durante caricamento iniziale
   if (loading) {
     return (
       <div className="registro-page">
-        <div className="loading-state">
-          <LoadingSpinner size="lg" />
-          <p>Caricamento clienti...</p>
+        <div className="page-breadcrumb">
+          <span className="breadcrumb-item">Home</span>
+          <span className="breadcrumb-separator">›</span>
+          <span className="breadcrumb-item active">Clienti</span>
+        </div>
+        <div className="page-header">
+          <div className="page-header-content">
+            <div className="page-header-title">
+              <span className="page-header-icon">👥</span>
+              <h2>Clienti</h2>
+              <span className="page-header-badge">Anagrafica</span>
+            </div>
+          </div>
+          <div className="page-header-actions">
+            <button className="btn btn-secondary" disabled>⚙️ Colonne</button>
+            <button className="btn btn-secondary" disabled>Referral</button>
+            <button className="btn btn-primary" disabled>Nuovo Cliente</button>
+          </div>
+        </div>
+        <div className="filters-panel">
+          <div className="table-skeleton">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="table-skeleton-row">
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+                <div className="table-skeleton-cell"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -524,7 +662,15 @@ function Customers() {
         </div>
         <div className="page-header-actions">
           <button 
-            className="btn btn-referral" 
+            className="btn btn-secondary" 
+            onClick={() => setShowColumnSettings(true)}
+            disabled={loading}
+            title="Personalizza colonne"
+          >
+            ⚙️ Colonne
+          </button>
+          <button 
+            className="btn btn-secondary" 
             onClick={openReferralManager}
             disabled={loading}
           >
@@ -543,17 +689,47 @@ function Customers() {
       {/* Pannello Filtri */}
       <div className="filters-panel">
         <div className="filters-bar">
-          <div className="search-input-wrapper">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Cerca per nome..."
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-            />
-          </div>
           <div className="filters-actions">
+            <div className="filter-group-inline filter-group-search">
+              <label>Nome</label>
+              <div className="search-input-wrapper-inline">
+                <span className="search-icon">🔍</span>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Cerca per nome..."
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="filter-group-inline">
+              <label>Spesa Min</label>
+              <input
+                type="number"
+                className="filter-input-number"
+                placeholder="€ 0.00"
+                value={spesaMin}
+                onChange={(e) => setSpesaMin(e.target.value)}
+                step="0.01"
+                min="0"
+              />
+            </div>
+
+            <div className="filter-group-inline">
+              <label>Spesa Max</label>
+              <input
+                type="number"
+                className="filter-input-number"
+                placeholder="€ 0.00"
+                value={spesaMax}
+                onChange={(e) => setSpesaMax(e.target.value)}
+                step="0.01"
+                min="0"
+              />
+            </div>
+
             <div className="filter-group-inline">
               <label>Stato</label>
               <Dropdown
@@ -576,15 +752,14 @@ function Customers() {
               />
             </div>
 
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleResetFilters}
-              >
-                Reset Filtri
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleResetFilters}
+              disabled={!hasActiveFilters}
+            >
+              Reset Filtri
+            </button>
           </div>
         </div>
 
@@ -606,50 +781,69 @@ function Customers() {
         <table>
           <thead>
             <tr>
-              <th className="col-id" title="Identificativo univoco del cliente">ID</th>
-              <th 
-                className={`col-nome sortable ${sortColumn === 'name' ? 'sorted' : ''}`}
-                onClick={() => handleSort('name')}
-                title="Clicca per ordinare per nome del cliente"
-              >
-                Nome
-              </th>
-              <th 
-                className={`col-spesa sortable ${sortColumn === 'spesa' ? 'sorted' : ''}`}
-                onClick={() => handleSort('spesa')}
-                title="Clicca per ordinare per spesa totale del cliente"
-              >
-                Spesa
-              </th>
-              <th 
-                className={`col-deal sortable ${sortColumn === 'ultimoDeal' ? 'sorted' : ''}`}
-                onClick={() => handleSort('ultimoDeal')}
-                title="Clicca per ordinare per data ultimo deal del cliente"
-              >
-                Ultimo Deal
-              </th>
-              <th className="col-referral" title="Cliente che ha referito questo cliente">Referral</th>
-              <th 
-                className={`col-referiti sortable ${sortColumn === 'referredByCount' ? 'sorted' : ''}`}
-                onClick={() => handleSort('referredByCount')}
-                title="Clicca per ordinare per numero di clienti referiti"
-              >
-                Referenti
-              </th>
-              <th className="col-attivo" title="Stato attivo/inattivo del cliente">Attivo</th>
-              <th className="col-azioni" title="Azioni disponibili: modifica o elimina cliente">Azioni</th>
+              {columnVisibility.id && (
+                <th className="col-id" title="Identificativo univoco del cliente">ID</th>
+              )}
+              {columnVisibility.nome && (
+                <th 
+                  className={`col-nome sortable ${sortColumn === 'name' ? 'sorted' : ''}`}
+                  onClick={() => handleSort('name')}
+                  title="Clicca per ordinare per nome del cliente"
+                >
+                  Nome
+                </th>
+              )}
+              {columnVisibility.spesa && (
+                <th 
+                  className={`col-spesa sortable ${sortColumn === 'spesa' ? 'sorted' : ''}`}
+                  onClick={() => handleSort('spesa')}
+                  title="Clicca per ordinare per spesa totale del cliente"
+                >
+                  Spesa
+                </th>
+              )}
+              {columnVisibility.debito && (
+                <th className="col-debito" title="Debito del cliente">Debito</th>
+              )}
+              {columnVisibility.ultimoDeal && (
+                <th 
+                  className={`col-deal sortable ${sortColumn === 'ultimoDeal' ? 'sorted' : ''}`}
+                  onClick={() => handleSort('ultimoDeal')}
+                  title="Clicca per ordinare per data ultimo deal del cliente"
+                >
+                  Ultimo Deal
+                </th>
+              )}
+              {columnVisibility.referral && (
+                <th className="col-referral" title="Cliente che ha referito questo cliente">Referral</th>
+              )}
+              {columnVisibility.referiti && (
+                <th 
+                  className={`col-referiti sortable ${sortColumn === 'referredByCount' ? 'sorted' : ''}`}
+                  onClick={() => handleSort('referredByCount')}
+                  title="Clicca per ordinare per numero di clienti referiti"
+                >
+                  Referiti
+                </th>
+              )}
+              {columnVisibility.attivo && (
+                <th className="col-attivo" title="Stato attivo/inattivo del cliente">Attivo</th>
+              )}
+              {columnVisibility.azioni && (
+                <th className="col-azioni" title="Azioni disponibili: modifica o elimina cliente">Azioni</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {customers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="table-empty-state">
+                <td colSpan={visibleColumnsCount} className="table-empty-state">
                   Nessun cliente trovato
                 </td>
               </tr>
             ) : filteredAndSortedCustomers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="table-empty-state">
+                <td colSpan={visibleColumnsCount} className="table-empty-state">
                   Nessun risultato per i filtri selezionati
                 </td>
               </tr>
@@ -662,99 +856,130 @@ function Customers() {
                 
                 return (
                 <tr key={customer.id}>
-                  <td className="col-id" title={`ID Cliente: ${customer.id}`}>{customer.id}</td>
-                  <td className="col-nome">
+                  {columnVisibility.id && (
+                    <td className="col-id" title={`ID Cliente: ${customer.id}`}>{customer.id}</td>
+                  )}
+                  {columnVisibility.nome && (
+                    <td className="col-nome">
                     {customer.isReferral && customer.referralColor ? (
                       <span 
-                        className="referral-badge customer-name-badge"
+                        className="referral-badge customer-name-badge customer-name-clickable"
                         style={getReferralBadgeStyle(customer.referralColor)}
+                        onClick={() => handleCustomerClick(customer)}
+                        title="Clicca per vedere i dettagli"
                       >
                         {customer.name.toUpperCase()}
                       </span>
                     ) : (
                       <span 
-                        className="customer-name-badge"
+                        className="customer-name-badge customer-name-clickable"
                         style={getReferralBadgeStyle('#ffffff')}
+                        onClick={() => handleCustomerClick(customer)}
+                        title="Clicca per vedere i dettagli"
                       >
                         {customer.name.toUpperCase()}
                       </span>
                     )}
-                  </td>
-                  <td 
-                    className="col-spesa" 
-                    title={`Spesa totale: ${formatCurrency(customer.spesa || 0)}`}
-                  >
-                    {formatCurrency(customer.spesa || 0)}
-                  </td>
-                  <td 
-                    className="col-deal" 
-                    title={customer.ultimoDeal ? `Ultimo deal: ${formatDate(customer.ultimoDeal)}` : 'Nessun deal registrato'}
-                  >
-                    {formatDate(customer.ultimoDeal)}
-                  </td>
-                  <td className="col-referral">
-                    {customer.referral ? (
-                      referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
-                        <span 
-                          className="referral-badge"
-                          style={getReferralBadgeStyle(referralCustomer.referralColor)}
-                        >
-                          {customer.referral.name.toUpperCase()}
-                        </span>
+                    </td>
+                  )}
+                  {columnVisibility.spesa && (
+                    <td 
+                      className="col-spesa" 
+                      title={`Spesa totale: ${formatCurrency(customer.spesa || 0)}`}
+                    >
+                      {formatCurrency(customer.spesa || 0)}
+                    </td>
+                  )}
+                  {columnVisibility.debito && (
+                    <td 
+                      className="col-debito" 
+                      title={customer.debito && customer.debito > 0 ? `Debito: ${formatCurrency(customer.debito)}` : 'Nessun debito'}
+                    >
+                      {customer.debito && customer.debito > 0 ? (
+                        <span className="debito-amount">{formatCurrency(customer.debito)}</span>
                       ) : (
-                        <span 
-                          className="referral-badge"
-                          style={getReferralBadgeStyle('#0284c7')}
+                        <span className="debito-check">✓</span>
+                      )}
+                    </td>
+                  )}
+                  {columnVisibility.ultimoDeal && (
+                    <td 
+                      className="col-deal" 
+                      title={customer.ultimoDeal ? `Ultimo deal: ${formatDate(customer.ultimoDeal)}` : 'Nessun deal registrato'}
+                    >
+                      {formatDate(customer.ultimoDeal)}
+                    </td>
+                  )}
+                  {columnVisibility.referral && (
+                    <td className="col-referral">
+                      {customer.referral ? (
+                        referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
+                          <span 
+                            className="referral-badge"
+                            style={getReferralBadgeStyle(referralCustomer.referralColor)}
+                          >
+                            {customer.referral.name.toUpperCase()}
+                          </span>
+                        ) : (
+                          <span 
+                            className="referral-badge"
+                            style={getReferralBadgeStyle('#0284c7')}
+                          >
+                            {customer.referral.name.toUpperCase()}
+                          </span>
+                        )
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                  )}
+                  {columnVisibility.referiti && (
+                    <td 
+                      className="col-referiti"
+                      title={customer.referredByCount && customer.referredByCount > 0 ? `${customer.referredByCount} ${customer.referredByCount === 1 ? 'cliente referito' : 'clienti referiti'}` : 'Nessun cliente referito'}
+                    >
+                      {customer.referredByCount && customer.referredByCount > 0 ? (
+                        <Badge variant="primary" size="sm">
+                          {customer.referredByCount}
+                        </Badge>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                  )}
+                  {columnVisibility.attivo && (
+                    <td className="col-attivo">
+                      <label className="table-toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={customer.attivo}
+                          onChange={(e) => handleToggleAttivo(customer.id, e.target.checked)}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isToggling === customer.id || loading}
+                        />
+                        <span className="table-toggle-slider"></span>
+                      </label>
+                      {isToggling === customer.id && (
+                        <LoadingSpinner size="sm" className="inline-spinner" />
+                      )}
+                    </td>
+                  )}
+                  {columnVisibility.azioni && (
+                    <td className="col-azioni">
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn edit" 
+                          onClick={() => handleEdit(customer)}
+                          title="Modifica cliente"
+                          type="button"
+                          disabled={loading || isSaving || isDeleting}
                         >
-                          {customer.referral.name.toUpperCase()}
-                        </span>
-                      )
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  <td 
-                    className="col-referiti"
-                    title={customer.referredByCount && customer.referredByCount > 0 ? `${customer.referredByCount} ${customer.referredByCount === 1 ? 'cliente referito' : 'clienti referiti'}` : 'Nessun cliente referito'}
-                  >
-                    {customer.referredByCount && customer.referredByCount > 0 ? (
-                      <Badge variant="primary" size="sm">
-                        {customer.referredByCount}
-                      </Badge>
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  <td className="col-attivo">
-                    <label className="table-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={customer.attivo}
-                        onChange={(e) => handleToggleAttivo(customer.id, e.target.checked)}
-                        onClick={(e) => e.stopPropagation()}
-                        disabled={isToggling === customer.id || loading}
-                      />
-                      <span className="table-toggle-slider"></span>
-                    </label>
-                    {isToggling === customer.id && (
-                      <LoadingSpinner size="sm" className="inline-spinner" />
-                    )}
-                  </td>
-                  <td className="col-azioni">
-                    <div className="action-buttons">
-                      <button 
-                        className="action-btn edit" 
-                        onClick={() => handleEdit(customer)}
-                        title="Modifica cliente"
-                        type="button"
-                        disabled={loading || isSaving || isDeleting}
-                      >
-                        <span className="action-btn-icon">✏️</span>
-                      </button>
-                      <button 
-                        className="action-btn delete" 
-                        onClick={() => handleDeleteClick(customer.id)}
-                        title="Elimina cliente"
+                          <span className="action-btn-icon">✏️</span>
+                        </button>
+                        <button 
+                          className="action-btn delete" 
+                          onClick={() => handleDeleteClick(customer.id)}
+                          title="Elimina cliente"
                         type="button"
                         disabled={loading || isSaving || isDeleting}
                       >
@@ -762,6 +987,7 @@ function Customers() {
                       </button>
                     </div>
                   </td>
+                  )}
                 </tr>
                 );
               })
@@ -1007,6 +1233,176 @@ function Customers() {
         cancelText="Annulla"
         variant="danger"
       />
+
+      {/* Modal Dettagli Cliente */}
+      {selectedCustomer && (
+        <Modal
+          isOpen={showDetailsModal}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedCustomer(null);
+          }}
+          title={selectedCustomer.name}
+          size="md"
+        >
+          <div className="customer-details-compact">
+            {/* Riga principale: Info base + Statistiche */}
+            <div className="customer-details-main-row">
+              <div className="customer-details-main-info">
+                <div className="customer-details-name">
+                  {selectedCustomer.isReferral && selectedCustomer.referralColor ? (
+                    <span 
+                      className="referral-badge customer-name-badge"
+                      style={getReferralBadgeStyle(selectedCustomer.referralColor)}
+                    >
+                      {selectedCustomer.name.toUpperCase()}
+                    </span>
+                  ) : (
+                    <span className="customer-details-name-text">{selectedCustomer.name}</span>
+                  )}
+                  <Badge variant={selectedCustomer.attivo ? 'success' : 'secondary'} size="sm">
+                    {selectedCustomer.attivo ? 'Attivo' : 'Inattivo'}
+                  </Badge>
+                </div>
+                <div className="customer-details-id">ID: {selectedCustomer.id}</div>
+              </div>
+              <div className="customer-details-stats-compact">
+                <div className="customer-details-stat-item">
+                  <span className="customer-details-stat-label">Spesa Totale</span>
+                  <span className="customer-details-stat-value">{formatCurrency(selectedCustomer.spesa || 0)}</span>
+                </div>
+                <div className="customer-details-stat-item">
+                  <span className="customer-details-stat-label">Referiti</span>
+                  <span className="customer-details-stat-value">{selectedCustomer.referredByCount || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Riga secondaria: Referral + Ultimo Deal + Debito */}
+            <div className="customer-details-secondary-row">
+              <div className="customer-details-secondary-item">
+                <span className="customer-details-secondary-label">Referral:</span>
+                <span className="customer-details-secondary-value">
+                  {selectedCustomer.referral ? (
+                    (() => {
+                      const referralCustomer = customers.find(c => c.id === selectedCustomer.referralId);
+                      return referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
+                        <span 
+                          className="referral-badge"
+                          style={getReferralBadgeStyle(referralCustomer.referralColor)}
+                        >
+                          {selectedCustomer.referral.name.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="referral-badge" style={getReferralBadgeStyle('#0284c7')}>
+                          {selectedCustomer.referral.name.toUpperCase()}
+                        </span>
+                      );
+                    })()
+                  ) : (
+                    <span className="customer-details-empty">Nessuno</span>
+                  )}
+                </span>
+              </div>
+              <div className="customer-details-secondary-item">
+                <span className="customer-details-secondary-label">Ultimo Deal:</span>
+                <span className="customer-details-secondary-value">
+                  {selectedCustomer.ultimoDeal ? (
+                    <>
+                      {formatDate(selectedCustomer.ultimoDeal)}
+                      {(() => {
+                        const daysSince = getDaysSinceLastDeal(selectedCustomer.ultimoDeal);
+                        return daysSince !== null ? (
+                          <span className="customer-details-days"> ({daysSince} giorni fa)</span>
+                        ) : null;
+                      })()}
+                    </>
+                  ) : (
+                    <span className="customer-details-empty">Nessuno</span>
+                  )}
+                </span>
+              </div>
+              <div className="customer-details-secondary-item">
+                <span className="customer-details-secondary-label">Debito:</span>
+                <span className="customer-details-secondary-value">
+                  {selectedCustomer.debito && selectedCustomer.debito > 0 ? (
+                    <span className="debito-amount">{formatCurrency(selectedCustomer.debito)}</span>
+                  ) : (
+                    <span className="debito-check">✓ Nessun debito</span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Movimenti */}
+            <div className="customer-details-movements">
+              <div className="customer-details-movements-header">
+                <span className="customer-details-movements-title">Movimenti</span>
+                <span className="customer-details-movements-count">0</span>
+              </div>
+              <div className="customer-details-movements-placeholder">
+                <span className="customer-details-empty">Nessun movimento collegato (funzionalità in arrivo)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ marginTop: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setShowDetailsModal(false);
+                setSelectedCustomer(null);
+              }}
+            >
+              Chiudi
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleEditFromDetails}
+            >
+              Modifica
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Personalizza Colonne */}
+      <Modal
+        isOpen={showColumnSettings}
+        onClose={() => setShowColumnSettings(false)}
+        title="Personalizza Colonne"
+        size="md"
+      >
+        <div className="column-settings">
+          <p style={{ marginBottom: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            Seleziona le colonne da mostrare nella tabella. Le tue preferenze verranno salvate.
+          </p>
+          <div className="column-settings-list">
+            {(Object.keys(columnLabels) as ColumnKey[]).map((columnKey) => (
+              <label key={columnKey} className="column-settings-item">
+                <input
+                  type="checkbox"
+                  checked={columnVisibility[columnKey]}
+                  onChange={() => toggleColumnVisibility(columnKey)}
+                  disabled={columnKey === 'nome' || columnKey === 'azioni'} // Nome e Azioni sempre visibili
+                />
+                <span className="column-settings-label">{columnLabels[columnKey]}</span>
+                {(columnKey === 'nome' || columnKey === 'azioni') && (
+                  <span className="column-settings-required">(sempre visibile)</span>
+                )}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="modal-footer" style={{ marginTop: 'var(--spacing-5)', display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowColumnSettings(false)}
+          >
+            Chiudi
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

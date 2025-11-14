@@ -74,7 +74,7 @@
 ```
 
 **Utilizzo:**
-- Bottoni secondari/referral (`btn-referral`, `btn-secondary`)
+- Bottoni secondari (`btn-secondary`)
 - Background neutri
 - Testo secondario
 - Border sottili
@@ -414,30 +414,13 @@ th, td {
 
 ---
 
-#### Referral Button (Azione secondaria)
-```jsx
-<button className="btn btn-referral">Testo</button>
-```
-
-**Colore:** Grigio con effetto glass  
-**Utilizzo:** Azioni secondarie (es. "Referral")
-
-**Stile:**
-- Background: Gradiente grigio con opacità
-- Glass effect: `backdrop-filter: blur(10px)`
-- Transition: `var(--transition-luxury)`
-- Shadow multi-layer
-- Hover: Glow dorato sottile `0 0 15px rgba(230, 194, 0, 0.08)`
-
----
-
 #### Secondary Button
 ```jsx
 <button className="btn btn-secondary">Testo</button>
 ```
 
 **Colore:** Grigio neutro  
-**Utilizzo:** Azioni secondarie generiche
+**Utilizzo:** Azioni secondarie generiche (es. "Referral", "Reset Filtri")
 
 ---
 

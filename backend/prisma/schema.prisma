@@ -55,6 +55,7 @@ model Customer {
   id           String    @id
   name         String
   spesa        Decimal   @default(0) @db.Decimal(10, 2)
+  debito       Decimal   @default(0) @db.Decimal(10, 2)
   ultimoDeal   DateTime?
   referralId   String?
   referral     Customer? @relation("CustomerReferral", fields: [referralId], references: [id], onDelete: SetNull)

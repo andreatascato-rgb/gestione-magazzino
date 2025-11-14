@@ -34,6 +34,7 @@ export interface Customer {
   id: string;
   name: string;
   spesa: number;
+  debito: number;
   ultimoDeal?: string;
   referralId?: string;
   referral?: Customer;
