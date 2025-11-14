@@ -371,6 +371,14 @@ function Customers() {
     return Object.values(columnVisibility).filter(Boolean).length;
   }, [columnVisibility]);
 
+  // Calcola il cliente con più spesa (Star)
+  const topCustomerBySpesa = useMemo(() => {
+    if (customers.length === 0) return null;
+    return customers.reduce((max, customer) => {
+      return (customer.spesa || 0) > (max.spesa || 0) ? customer : max;
+    }, customers[0]);
+  }, [customers]);
+
   // Mappa nomi colonne
   const columnLabels: Record<ColumnKey, string> = {
     id: 'ID',
@@ -803,30 +811,8 @@ function Customers() {
               </svg>
             </div>
             <div className="customer-stat-card-info">
-              <h3 className="customer-stat-card-label">Totale Clienti</h3>
+              <h3 className="customer-stat-card-label">Clienti</h3>
               <p className="customer-stat-card-value">{customers.length}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="customer-metric-card customer-stat-card-primary" hover>
-          <div className="customer-stat-card-content">
-            <div className="customer-stat-card-icon">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <path d="M20 8v6M23 11h-6"></path>
-              </svg>
-            </div>
-            <div className="customer-stat-card-info">
-              <h3 className="customer-stat-card-label">Numero Referral</h3>
-              <p className="customer-stat-card-value">{allReferrals.length}</p>
             </div>
           </div>
         </Card>
@@ -846,7 +832,7 @@ function Customers() {
               </svg>
             </div>
             <div className="customer-stat-card-info">
-              <h3 className="customer-stat-card-label">Spesa Totale</h3>
+              <h3 className="customer-stat-card-label">Spesa</h3>
               <p className="customer-stat-card-value">
                 {formatCurrency(customers.reduce((sum, c) => sum + (c.spesa || 0), 0))}
               </p>
@@ -871,14 +857,14 @@ function Customers() {
               </svg>
             </div>
             <div className="customer-stat-card-info">
-              <h3 className="customer-stat-card-label">Debito Totale</h3>
+              <h3 className="customer-stat-card-label">Debito</h3>
               <p className="customer-stat-card-value">
                 {formatCurrency(customers.reduce((sum, c) => sum + (c.debito || 0), 0))}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="customer-metric-card customer-stat-card-warning" hover>
+        <Card className="customer-metric-card customer-stat-card-error" hover>
           <div className="customer-stat-card-content">
             <div className="customer-stat-card-icon">
               <svg
@@ -897,9 +883,53 @@ function Customers() {
               </svg>
             </div>
             <div className="customer-stat-card-info">
-              <h3 className="customer-stat-card-label">Numero Debitori</h3>
+              <h3 className="customer-stat-card-label">Debitori</h3>
               <p className="customer-stat-card-value">
                 {customers.filter(c => (c.debito || 0) > 0).length}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="customer-metric-card customer-stat-card-primary" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <path d="M20 8v6M23 11h-6"></path>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Referral</h3>
+              <p className="customer-stat-card-value">{allReferrals.length}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="customer-metric-card customer-stat-card-warning" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Star</h3>
+              <p className="customer-stat-card-value">
+                {topCustomerBySpesa ? topCustomerBySpesa.name : '-'}
               </p>
             </div>
           </div>
@@ -1180,21 +1210,52 @@ function Customers() {
                   {columnVisibility.referral && (
                     <td className="col-referral">
                       {customer.referral ? (
-                        referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
-                          <span 
-                            className="referral-badge"
-                            style={getReferralBadgeStyle(referralCustomer.referralColor)}
-                          >
-                            {customer.referral.name.toUpperCase()}
-                          </span>
-                        ) : (
-                          <span 
-                            className="referral-badge"
-                            style={getReferralBadgeStyle('#0284c7')}
-                          >
-                            {customer.referral.name.toUpperCase()}
-                          </span>
-                        )
+                        (() => {
+                          const referralFullCustomer = customers.find(c => c.id === customer.referralId);
+                          if (referralFullCustomer) {
+                            return referralFullCustomer.isReferral && referralFullCustomer.referralColor ? (
+                              <span 
+                                className="referral-badge customer-name-clickable"
+                                style={getReferralBadgeStyle(referralFullCustomer.referralColor)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCustomerClick(referralFullCustomer);
+                                }}
+                                title="Clicca per vedere i dettagli del referral"
+                              >
+                                {customer.referral.name.toUpperCase()}
+                              </span>
+                            ) : (
+                              <span 
+                                className="referral-badge customer-name-clickable"
+                                style={getReferralBadgeStyle('#0284c7')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCustomerClick(referralFullCustomer);
+                                }}
+                                title="Clicca per vedere i dettagli del referral"
+                              >
+                                {customer.referral.name.toUpperCase()}
+                              </span>
+                            );
+                          }
+                          // Fallback se il referral non è trovato nella lista
+                          return referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
+                            <span 
+                              className="referral-badge"
+                              style={getReferralBadgeStyle(referralCustomer.referralColor)}
+                            >
+                              {customer.referral.name.toUpperCase()}
+                            </span>
+                          ) : (
+                            <span 
+                              className="referral-badge"
+                              style={getReferralBadgeStyle('#0284c7')}
+                            >
+                              {customer.referral.name.toUpperCase()}
+                            </span>
+                          );
+                        })()
                       ) : (
                         '-'
                       )}
@@ -1531,6 +1592,11 @@ function Customers() {
                   <Badge variant={selectedCustomer.attivo ? 'success' : 'secondary'} size="sm">
                     {selectedCustomer.attivo ? 'Attivo' : 'Inattivo'}
                   </Badge>
+                  {selectedCustomer.isReferral && (
+                    <Badge variant="primary" size="sm" title="Numero di clienti referiti da questo referral">
+                      {selectedCustomer.referredByCount || 0} {selectedCustomer.referredByCount === 1 ? 'referito' : 'referiti'}
+                    </Badge>
+                  )}
                 </div>
                 <div className="customer-details-id">ID: {selectedCustomer.id}</div>
               </div>
@@ -1565,14 +1631,34 @@ function Customers() {
                   {selectedCustomer.referral ? (
                     (() => {
                       const referralCustomer = customers.find(c => c.id === selectedCustomer.referralId);
-                      return referralCustomer && referralCustomer.isReferral && referralCustomer.referralColor ? (
-                        <span 
-                          className="referral-badge"
-                          style={getReferralBadgeStyle(referralCustomer.referralColor)}
-                        >
-                          {selectedCustomer.referral.name.toUpperCase()}
-                        </span>
-                      ) : (
+                      if (referralCustomer) {
+                        return referralCustomer.isReferral && referralCustomer.referralColor ? (
+                          <span 
+                            className="referral-badge customer-name-clickable"
+                            style={getReferralBadgeStyle(referralCustomer.referralColor)}
+                            onClick={() => {
+                              setShowDetailsModal(false);
+                              handleCustomerClick(referralCustomer);
+                            }}
+                            title="Clicca per vedere i dettagli del referral"
+                          >
+                            {selectedCustomer.referral.name.toUpperCase()}
+                          </span>
+                        ) : (
+                          <span 
+                            className="referral-badge customer-name-clickable"
+                            style={getReferralBadgeStyle('#0284c7')}
+                            onClick={() => {
+                              setShowDetailsModal(false);
+                              handleCustomerClick(referralCustomer);
+                            }}
+                            title="Clicca per vedere i dettagli del referral"
+                          >
+                            {selectedCustomer.referral.name.toUpperCase()}
+                          </span>
+                        );
+                      }
+                      return (
                         <span className="referral-badge" style={getReferralBadgeStyle('#0284c7')}>
                           {selectedCustomer.referral.name.toUpperCase()}
                         </span>
