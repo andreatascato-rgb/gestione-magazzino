@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import { Customer } from '../types';
-import { useToast, ConfirmDialog, LoadingSpinner, Badge, Dropdown, Modal } from '../components';
+import { Card, useToast, ConfirmDialog, LoadingSpinner, Badge, Dropdown, Modal } from '../components';
 import type { DropdownOption } from '../components';
 
 function Customers() {
@@ -19,6 +19,8 @@ function Customers() {
   const [filterReferral, setFilterReferral] = useState<string>('all');
   const [spesaMin, setSpesaMin] = useState<string>('');
   const [spesaMax, setSpesaMax] = useState<string>('');
+  const [filterDebito, setFilterDebito] = useState<'all' | 'con' | 'senza'>('all');
+  const [filterPeriodoDeal, setFilterPeriodoDeal] = useState<'all' | '30' | '60' | '90'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; customerId: string | null }>({
     isOpen: false,
     customerId: null,
@@ -53,6 +55,17 @@ function Customers() {
   // Stato per modal dettagli cliente
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [customerNotes, setCustomerNotes] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('customer-notes');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
 
   // Stato per colonne personalizzabili
   type ColumnKey = 'id' | 'nome' | 'spesa' | 'debito' | 'ultimoDeal' | 'referral' | 'referiti' | 'attivo' | 'azioni';
@@ -136,6 +149,7 @@ function Customers() {
         id: customer.id,
         name: customer.name,
         spesa: typeof customer.spesa === 'number' ? customer.spesa : parseFloat(customer.spesa?.toString() || '0'),
+        debito: typeof customer.debito === 'number' ? customer.debito : parseFloat(customer.debito?.toString() || '0'),
         ultimoDeal: customer.ultimoDeal || undefined,
         referralId: customer.referralId || undefined,
         referral: customer.referral || undefined,
@@ -370,6 +384,21 @@ function Customers() {
     return options;
   }, [allReferrals]);
 
+  // Opzioni per il dropdown Debito
+  const debitoOptions: DropdownOption[] = [
+    { value: 'all', label: 'Tutti' },
+    { value: 'con', label: 'Con debito' },
+    { value: 'senza', label: 'Senza debito' },
+  ];
+
+  // Opzioni per il dropdown Periodo Deal
+  const periodoDealOptions: DropdownOption[] = [
+    { value: 'all', label: 'Tutti' },
+    { value: '30', label: 'Ultimi 30 giorni' },
+    { value: '60', label: 'Ultimi 60 giorni' },
+    { value: '90', label: 'Ultimi 90 giorni' },
+  ];
+
   // Opzioni per il dropdown Referral (form)
   const formReferralOptions: DropdownOption[] = useMemo(() => {
     const options: DropdownOption[] = [{ value: '', label: 'Nessuno' }];
@@ -497,10 +526,14 @@ function Customers() {
   const filteredAndSortedCustomers = useMemo(() => {
     // Prima filtro
     let filtered = customers.filter(customer => {
-      // Filtro per nome (case-insensitive, ricerca parziale)
+      // Filtro per ricerca globale (nome, ID, referral)
       if (searchName.trim()) {
         const searchLower = searchName.toLowerCase().trim();
-        if (!customer.name.toLowerCase().includes(searchLower)) {
+        const matchesName = customer.name.toLowerCase().includes(searchLower);
+        const matchesId = customer.id.toLowerCase().includes(searchLower);
+        const matchesReferral = customer.referral?.name.toLowerCase().includes(searchLower) || false;
+        
+        if (!matchesName && !matchesId && !matchesReferral) {
           return false;
         }
       }
@@ -536,6 +569,31 @@ function Customers() {
         if (!isNaN(maxSpesa) && (customer.spesa || 0) > maxSpesa) {
           return false;
         }
+      }
+
+      // Filtro per debito
+      if (filterDebito !== 'all') {
+        const hasDebito = customer.debito && customer.debito > 0;
+        if (filterDebito === 'con' && !hasDebito) {
+          return false;
+        }
+        if (filterDebito === 'senza' && hasDebito) {
+          return false;
+        }
+      }
+
+      // Filtro per periodo ultimo deal
+      if (filterPeriodoDeal !== 'all' && customer.ultimoDeal) {
+        const daysSince = getDaysSinceLastDeal(customer.ultimoDeal);
+        if (daysSince !== null) {
+          const daysLimit = parseInt(filterPeriodoDeal);
+          if (daysSince > daysLimit) {
+            return false;
+          }
+        }
+      } else if (filterPeriodoDeal !== 'all' && !customer.ultimoDeal) {
+        // Se filtro periodo attivo ma cliente non ha deal, escludilo
+        return false;
       }
 
       return true;
@@ -583,7 +641,7 @@ function Customers() {
     }
 
     return filtered;
-  }, [customers, searchName, filterAttivo, filterReferral, spesaMin, spesaMax, sortColumn, sortDirection]);
+  }, [customers, searchName, filterAttivo, filterReferral, spesaMin, spesaMax, filterDebito, filterPeriodoDeal, sortColumn, sortDirection]);
 
   // Funzioni handler per i filtri
   const handleResetFilters = () => {
@@ -592,6 +650,8 @@ function Customers() {
     setFilterReferral('all');
     setSpesaMin('');
     setSpesaMax('');
+    setFilterDebito('all');
+    setFilterPeriodoDeal('all');
   };
 
   const hasActiveFilters = useMemo(() => {
@@ -599,8 +659,10 @@ function Customers() {
       filterAttivo !== 'all' ||
       filterReferral !== 'all' ||
       spesaMin.trim() !== '' ||
-      spesaMax.trim() !== '';
-  }, [searchName, filterAttivo, filterReferral, spesaMin, spesaMax]);
+      spesaMax.trim() !== '' ||
+      filterDebito !== 'all' ||
+      filterPeriodoDeal !== 'all';
+  }, [searchName, filterAttivo, filterReferral, spesaMin, spesaMax, filterDebito, filterPeriodoDeal]);
 
   // Mostra loading skeleton durante caricamento iniziale
   if (loading) {
@@ -686,21 +748,104 @@ function Customers() {
         </div>
       </div>
 
+      {/* Header Metriche Aggregate */}
+      <div className="customer-metrics-header">
+        <Card className="customer-metric-card customer-stat-card-accent" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Totale Clienti</h3>
+              <p className="customer-stat-card-value">{customers.length}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="customer-metric-card customer-stat-card-success" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Spesa Totale</h3>
+              <p className="customer-stat-card-value">
+                {formatCurrency(customers.reduce((sum, c) => sum + (c.spesa || 0), 0))}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="customer-metric-card customer-stat-card-error" hover>
+          <div className="customer-stat-card-content">
+            <div className="customer-stat-card-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <div className="customer-stat-card-info">
+              <h3 className="customer-stat-card-label">Debito Totale</h3>
+              <p className="customer-stat-card-value">
+                {formatCurrency(customers.reduce((sum, c) => sum + (c.debito || 0), 0))}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       {/* Pannello Filtri */}
       <div className="filters-panel">
         <div className="filters-bar">
           <div className="filters-actions">
             <div className="filter-group-inline filter-group-search">
-              <label>Nome</label>
+              <label>Cerca</label>
               <div className="search-input-wrapper-inline">
                 <span className="search-icon">🔍</span>
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Cerca per nome..."
+                  placeholder="Cerca per nome, ID o referral..."
                   value={searchName}
                   onChange={(e) => setSearchName(e.target.value)}
                 />
+                {searchName.trim() && (
+                  <button
+                    type="button"
+                    className="search-clear-btn"
+                    onClick={() => setSearchName('')}
+                    title="Cancella ricerca"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             </div>
 
@@ -752,6 +897,26 @@ function Customers() {
               />
             </div>
 
+            <div className="filter-group-inline">
+              <label>Debito</label>
+              <Dropdown
+                value={filterDebito}
+                onChange={(value) => setFilterDebito(value as 'all' | 'con' | 'senza')}
+                options={debitoOptions}
+                placeholder="Seleziona debito"
+              />
+            </div>
+
+            <div className="filter-group-inline">
+              <label>Ultimo Deal</label>
+              <Dropdown
+                value={filterPeriodoDeal}
+                onChange={(value) => setFilterPeriodoDeal(value as 'all' | '30' | '60' | '90')}
+                options={periodoDealOptions}
+                placeholder="Seleziona periodo"
+              />
+            </div>
+
             <button
               type="button"
               className="btn btn-secondary"
@@ -778,7 +943,8 @@ function Customers() {
       </div>
 
       <div className="table-container">
-        <table>
+        <div className="table-container-inner">
+          <table>
           <thead>
             <tr>
               {columnVisibility.id && (
@@ -994,6 +1160,7 @@ function Customers() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showModal && (
@@ -1275,6 +1442,17 @@ function Customers() {
                   <span className="customer-details-stat-label">Referiti</span>
                   <span className="customer-details-stat-value">{selectedCustomer.referredByCount || 0}</span>
                 </div>
+                {selectedCustomer.ultimoDeal && (() => {
+                  const daysSince = getDaysSinceLastDeal(selectedCustomer.ultimoDeal);
+                  return (
+                    <div className="customer-details-stat-item">
+                      <span className="customer-details-stat-label">Frequenza</span>
+                      <span className="customer-details-stat-value">
+                        {daysSince !== null ? `${daysSince} giorni fa` : '-'}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1332,6 +1510,27 @@ function Customers() {
                   )}
                 </span>
               </div>
+            </div>
+
+            {/* Note */}
+            <div className="customer-details-notes">
+              <div className="customer-details-notes-header">
+                <span className="customer-details-notes-title">Note</span>
+              </div>
+              <textarea
+                className="customer-details-notes-textarea"
+                placeholder="Aggiungi note su questo cliente..."
+                value={customerNotes[selectedCustomer.id] || ''}
+                onChange={(e) => {
+                  const newNotes = {
+                    ...customerNotes,
+                    [selectedCustomer.id]: e.target.value,
+                  };
+                  setCustomerNotes(newNotes);
+                  localStorage.setItem('customer-notes', JSON.stringify(newNotes));
+                }}
+                rows={3}
+              />
             </div>
 
             {/* Movimenti */}

@@ -67,14 +67,13 @@
   padding: var(--spacing-8);
 }
 
-.card-hover:hover {
+.card-hover {
   box-shadow: 
     var(--shadow-lg),
-    0 0 0 1px rgba(230, 194, 0, 0.2),
-    0 8px 32px rgba(230, 194, 0, 0.15),
+    0 0 0 1px rgba(230, 194, 0, 0.08),
+    0 8px 32px rgba(230, 194, 0, 0.08),
     var(--shadow-primary-inner);
-  transform: translateY(-4px) scale(1.01);
-  border-color: rgba(230, 194, 0, 0.3);
+  border-color: rgba(230, 194, 0, 0.12);
   background: linear-gradient(
     180deg,
     rgba(39, 39, 42, 0.9) 0%,
@@ -82,9 +81,10 @@
     rgba(39, 39, 42, 0.85) 100%
   );
   position: relative;
+  transition: all var(--transition-luxury);
 }
 
-.card-hover:hover::after {
+.card-hover::after {
   opacity: 0.6;
   background: 
     radial-gradient(circle at 30% 20%, var(--bg-glow-gold) 0%, transparent 50%),
@@ -92,6 +92,33 @@
   -webkit-mask: none;
   mask: none;
   padding: 0;
+  transition: opacity var(--transition-luxury);
+}
+
+.card-hover::before {
+  opacity: 0.3;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(230, 194, 0, 0.25) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 15px rgba(230, 194, 0, 0.15);
+  transition: opacity var(--transition-luxury), box-shadow var(--transition-luxury);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 
+    var(--shadow-lg),
+    0 0 0 1px rgba(230, 194, 0, 0.3),
+    0 8px 32px rgba(230, 194, 0, 0.2),
+    var(--shadow-primary-inner);
+  border-color: rgba(230, 194, 0, 0.4);
+}
+
+.card-hover:hover::after {
+  opacity: 1;
 }
 
 .card-hover:hover::before {
@@ -99,14 +126,10 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(230, 194, 0, 0.5) 50%,
+    rgba(230, 194, 0, 0.6) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 20px rgba(230, 194, 0, 0.3);
-}
-
-.card-hover:hover::after {
-  opacity: 1;
+  box-shadow: 0 0 25px rgba(230, 194, 0, 0.4);
 }
 
 .card-clickable {

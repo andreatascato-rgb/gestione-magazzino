@@ -381,7 +381,7 @@
 
 .search-input {
   width: 100%;
-  padding: var(--spacing-3) var(--spacing-4) var(--spacing-3) calc(var(--spacing-4) * 2 + 1.5rem);
+  padding: var(--spacing-3) calc(var(--spacing-4) * 2 + 1.5rem) var(--spacing-3) calc(var(--spacing-4) * 2 + 1.5rem);
   border: 1px solid var(--color-border-dark);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
@@ -394,6 +394,35 @@
     0 1px 0 rgba(255, 255, 255, 0.02);
   min-height: 42px;
   box-sizing: border-box;
+}
+
+.search-input:has(+ .search-clear-btn) {
+  padding-right: calc(var(--spacing-4) * 2 + 2.5rem);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: var(--spacing-3);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--spacing-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+  z-index: 2;
+}
+
+.search-clear-btn:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .search-input::placeholder {
@@ -854,9 +883,39 @@
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
-  overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 400px);
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.table-container-inner {
   overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container-inner::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container-inner::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+}
+
+.table-container-inner::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-base);
+}
+
+.table-container-inner::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 194, 0, 0.3);
 }
 
 /* Stili tabella clienti - Specificità alta per sovrascrivere Table.css */
@@ -864,7 +923,8 @@
   width: 100% !important;
   border-collapse: collapse !important;
   border-spacing: 0 !important;
-  table-layout: fixed !important; /* Layout fisso per controllo dimensioni colonne */
+  table-layout: auto !important; /* Layout auto per dimensioni proporzionali */
+  min-width: 100% !important;
 }
 
 .registro-page .table-container table thead {
@@ -972,32 +1032,41 @@
   text-overflow: ellipsis !important;
   display: table-cell !important;
   box-sizing: border-box !important;
+  height: 56px !important; /* Altezza riga coerente */
 }
 
-/* Dimensioni colonne ottimizzate e coerenti */
-/* Nota: padding, text-align, display, vertical-align sono già definiti nelle regole generali */
+.registro-page .table-container table th {
+  height: 48px !important; /* Altezza header coerente */
+}
+
+/* Dimensioni colonne dinamiche e proporzionali */
+/* Usa min-width per garantire leggibilità, max-width per evitare overflow */
 .registro-page .table-container table th.col-id,
 .registro-page .table-container table td.col-id {
-  width: 8% !important;
-  min-width: 75px !important;
+  min-width: 70px !important;
+  max-width: 100px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-nome,
 .registro-page .table-container table td.col-nome {
-  width: 18% !important;
-  min-width: 140px !important;
+  min-width: 150px !important;
+  max-width: 250px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-spesa,
 .registro-page .table-container table td.col-spesa {
-  width: 11% !important;
   min-width: 100px !important;
+  max-width: 140px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-debito,
 .registro-page .table-container table td.col-debito {
-  width: 11% !important;
   min-width: 100px !important;
+  max-width: 140px !important;
+  width: auto !important;
   text-align: center;
 }
 
@@ -1014,39 +1083,45 @@
 
 .registro-page .table-container table th.col-deal,
 .registro-page .table-container table td.col-deal {
-  width: 12% !important;
-  min-width: 110px !important;
+  min-width: 120px !important;
+  max-width: 160px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-referral,
 .registro-page .table-container table td.col-referral {
-  width: 18% !important;
   min-width: 140px !important;
+  max-width: 220px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-referiti,
 .registro-page .table-container table td.col-referiti {
-  width: 9% !important;
-  min-width: 85px !important;
+  min-width: 80px !important;
+  max-width: 120px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-attivo,
 .registro-page .table-container table td.col-attivo {
-  width: 9% !important;
-  min-width: 85px !important;
+  min-width: 90px !important;
+  max-width: 120px !important;
+  width: auto !important;
 }
 
 .registro-page .table-container table th.col-movimenti,
 .registro-page .table-container table td.col-movimenti {
-  width: 10% !important;
   min-width: 100px !important;
+  max-width: 140px !important;
+  width: auto !important;
   text-align: center;
 }
 
 .registro-page .table-container table th.col-azioni,
 .registro-page .table-container table td.col-azioni {
-  width: 8% !important;
-  min-width: 90px !important;
+  min-width: 100px !important;
+  max-width: 140px !important;
+  width: auto !important;
 }
 
 /* Badge per i referral nella colonna Referral e per i nomi clienti */
@@ -2021,6 +2096,53 @@
   flex-wrap: wrap;
 }
 
+.customer-details-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.customer-details-notes-header {
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.customer-details-notes-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.customer-details-notes-textarea {
+  width: 100%;
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  resize: vertical;
+  min-height: 80px;
+  transition: all var(--transition-base);
+  box-sizing: border-box;
+}
+
+.customer-details-notes-textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.customer-details-notes-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 
+    0 0 0 3px rgba(230, 194, 0, 0.15),
+    0 0 20px rgba(230, 194, 0, 0.1);
+  background: var(--glass-bg);
+}
+
 .customer-details-movements {
   display: flex;
   flex-direction: column;
@@ -2047,6 +2169,222 @@
   font-size: var(--font-size-base);
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
+}
+
+/* Customer Metrics Header */
+.customer-metrics-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+}
+
+.customer-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  animation: fadeInUp 0.5s ease-out backwards;
+  padding: var(--spacing-5);
+}
+
+.customer-metric-card:nth-child(1) { animation-delay: 0.1s; }
+.customer-metric-card:nth-child(2) { animation-delay: 0.15s; }
+.customer-metric-card:nth-child(3) { animation-delay: 0.2s; }
+
+.customer-stat-card-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.customer-stat-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+  color: currentColor;
+  position: relative;
+  transition: all var(--transition-luxury);
+  overflow: hidden;
+}
+
+.customer-stat-card-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity var(--transition-luxury);
+}
+
+.customer-stat-card-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* Gradienti di sfondo sempre visibili sulle card - stessi gradienti del componente Card */
+.customer-metric-card.customer-stat-card-accent,
+.customer-metric-card.customer-stat-card-success,
+.customer-metric-card.customer-stat-card-error {
+  box-shadow: 
+    var(--shadow-lg),
+    0 0 0 1px rgba(230, 194, 0, 0.08),
+    0 8px 32px rgba(230, 194, 0, 0.08),
+    var(--shadow-primary-inner);
+  border-color: rgba(230, 194, 0, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(39, 39, 42, 0.9) 0%,
+    rgba(39, 39, 42, 0.75) 50%,
+    rgba(39, 39, 42, 0.85) 100%
+  );
+  position: relative;
+  transition: all var(--transition-luxury);
+}
+
+.customer-metric-card.customer-stat-card-accent::after,
+.customer-metric-card.customer-stat-card-success::after,
+.customer-metric-card.customer-stat-card-error::after {
+  opacity: 0.6;
+  background: 
+    radial-gradient(circle at 30% 20%, var(--bg-glow-gold) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, var(--bg-glow-blue) 0%, transparent 50%);
+  -webkit-mask: none;
+  mask: none;
+  padding: 0;
+  transition: opacity var(--transition-luxury);
+}
+
+.customer-metric-card.customer-stat-card-accent::before,
+.customer-metric-card.customer-stat-card-success::before,
+.customer-metric-card.customer-stat-card-error::before {
+  opacity: 0.3;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(230, 194, 0, 0.25) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 15px rgba(230, 194, 0, 0.15);
+  transition: opacity var(--transition-luxury), box-shadow var(--transition-luxury);
+}
+
+.customer-metric-card:hover.customer-stat-card-accent,
+.customer-metric-card:hover.customer-stat-card-success,
+.customer-metric-card:hover.customer-stat-card-error {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 
+    var(--shadow-lg),
+    0 0 0 1px rgba(230, 194, 0, 0.3),
+    0 8px 32px rgba(230, 194, 0, 0.2),
+    var(--shadow-primary-inner);
+  border-color: rgba(230, 194, 0, 0.4);
+}
+
+.customer-metric-card:hover.customer-stat-card-accent::after,
+.customer-metric-card:hover.customer-stat-card-success::after,
+.customer-metric-card:hover.customer-stat-card-error::after {
+  opacity: 1;
+}
+
+.customer-metric-card:hover.customer-stat-card-accent::before,
+.customer-metric-card:hover.customer-stat-card-success::before,
+.customer-metric-card:hover.customer-stat-card-error::before {
+  opacity: 1;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(230, 194, 0, 0.6) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 25px rgba(230, 194, 0, 0.4);
+}
+
+/* Stili per le icone */
+.customer-stat-card-accent .customer-stat-card-icon {
+  background: linear-gradient(135deg, var(--color-accent-light) 0%, var(--color-accent-200) 100%);
+  color: var(--color-accent-dark);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+}
+
+.customer-metric-card:hover .customer-stat-card-accent .customer-stat-card-icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 
+    0 6px 20px rgba(2, 132, 199, 0.35),
+    0 4px 10px rgba(2, 132, 199, 0.25);
+}
+
+.customer-metric-card:hover .customer-stat-card-accent .customer-stat-card-icon::before {
+  opacity: 1;
+}
+
+.customer-stat-card-success .customer-stat-card-icon {
+  background: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-success-200) 100%);
+  color: var(--color-success-dark);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+}
+
+.customer-metric-card:hover .customer-stat-card-success .customer-stat-card-icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 
+    0 6px 20px rgba(22, 163, 74, 0.35),
+    0 4px 10px rgba(22, 163, 74, 0.25);
+}
+
+.customer-metric-card:hover .customer-stat-card-success .customer-stat-card-icon::before {
+  opacity: 1;
+}
+
+.customer-stat-card-error .customer-stat-card-icon {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+  color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.customer-metric-card:hover .customer-stat-card-error .customer-stat-card-icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 
+    0 6px 20px rgba(239, 68, 68, 0.35),
+    0 4px 10px rgba(239, 68, 68, 0.25);
+}
+
+.customer-metric-card:hover .customer-stat-card-error .customer-stat-card-icon::before {
+  opacity: 1;
+}
+
+.customer-stat-card-info {
+  flex: 1;
+}
+
+.customer-stat-card-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-1);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+}
+
+.customer-stat-card-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* Responsive Customer Metrics Header */
+@media (max-width: 768px) {
+  .customer-metrics-header {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
 }
 
 .customer-details-movements-placeholder {
@@ -2201,6 +2539,102 @@
   .table-skeleton-row {
     grid-template-columns: 1fr;
     gap: var(--spacing-2);
+  }
+}
+
+/* Responsive Table Container - Dimensioni dinamiche */
+@media (max-width: 1024px) {
+  .table-container {
+    max-height: calc(100vh - 350px);
+    min-height: 350px;
+  }
+  
+  .registro-page .table-container table th.col-nome,
+  .registro-page .table-container table td.col-nome {
+    min-width: 120px !important;
+    max-width: 200px !important;
+  }
+  
+  .registro-page .table-container table th.col-referral,
+  .registro-page .table-container table td.col-referral {
+    min-width: 120px !important;
+    max-width: 180px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    max-height: calc(100vh - 300px);
+    min-height: 300px;
+  }
+  
+  .registro-page .table-container table th,
+  .registro-page .table-container table td {
+    padding: 0.75rem 0.5rem !important;
+    font-size: var(--font-size-sm) !important;
+  }
+  
+  .registro-page .table-container table th.col-id,
+  .registro-page .table-container table td.col-id {
+    min-width: 60px !important;
+    max-width: 80px !important;
+  }
+  
+  .registro-page .table-container table th.col-nome,
+  .registro-page .table-container table td.col-nome {
+    min-width: 100px !important;
+    max-width: 150px !important;
+  }
+  
+  .registro-page .table-container table th.col-spesa,
+  .registro-page .table-container table td.col-spesa,
+  .registro-page .table-container table th.col-debito,
+  .registro-page .table-container table td.col-debito {
+    min-width: 80px !important;
+    max-width: 110px !important;
+  }
+  
+  .registro-page .table-container table th.col-deal,
+  .registro-page .table-container table td.col-deal {
+    min-width: 100px !important;
+    max-width: 130px !important;
+  }
+  
+  .registro-page .table-container table th.col-referral,
+  .registro-page .table-container table td.col-referral {
+    min-width: 100px !important;
+    max-width: 150px !important;
+  }
+  
+  .registro-page .table-container table th.col-referiti,
+  .registro-page .table-container table td.col-referiti,
+  .registro-page .table-container table th.col-attivo,
+  .registro-page .table-container table td.col-attivo {
+    min-width: 70px !important;
+    max-width: 100px !important;
+  }
+  
+  .registro-page .table-container table th.col-azioni,
+  .registro-page .table-container table td.col-azioni {
+    min-width: 80px !important;
+    max-width: 110px !important;
+  }
+}
+
+@media (min-width: 1920px) {
+  .table-container {
+    max-height: calc(100vh - 450px);
+    min-height: 500px;
+  }
+  
+  .registro-page .table-container table th.col-nome,
+  .registro-page .table-container table td.col-nome {
+    max-width: 300px !important;
+  }
+  
+  .registro-page .table-container table th.col-referral,
+  .registro-page .table-container table td.col-referral {
+    max-width: 280px !important;
   }
 }
 
